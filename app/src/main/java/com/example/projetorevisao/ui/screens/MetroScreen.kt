@@ -48,7 +48,7 @@ fun CitizenMetroScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ObsidianBackground)
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
         Row(
@@ -59,24 +59,24 @@ fun CitizenMetroScreen(
             Column {
                 Text(
                     text = "🚆 Metrô & CPTM SP",
-                    color = TextExpressivePrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
                     text = "Situação das Linhas & Densidade de Passageiros",
-                    color = TextExpressiveSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
             }
             Surface(
-                color = AccentCyan.copy(alpha = 0.15f),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                 shape = RoundedCornerShape(10.dp),
-                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(AccentCyan))
+                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary))
             ) {
                 Text(
                     text = "SPTrans / ViaQuatro",
-                    color = AccentCyan,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -91,7 +91,7 @@ fun CitizenMetroScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(1.dp, AccentPurpleAI.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
-            colors = CardDefaults.cardColors(containerColor = SurfaceDarkHeader),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
             shape = RoundedCornerShape(16.dp)
         ) {
             Row(
@@ -118,7 +118,7 @@ fun CitizenMetroScreen(
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "\"Fluxo intenso na Linha 3-Vermelha sentido Itaquera. Recomenda-se integrar via Linha 2-Verde em Ana Rosa para evitar a Sé.\"",
-                        color = TextExpressiveSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 16.sp
                     )
@@ -135,9 +135,9 @@ fun CitizenMetroScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, SurfaceBorderGlow, RoundedCornerShape(16.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
                         .clickable { onLineClick(line.name) },
-                    colors = CardDefaults.cardColors(containerColor = SurfaceDarkCard),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Row(
@@ -163,7 +163,7 @@ fun CitizenMetroScreen(
                             Column {
                                 Text(
                                     text = line.name,
-                                    color = TextExpressivePrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -176,7 +176,7 @@ fun CitizenMetroScreen(
                                 )
                                 Text(
                                     text = "Atualizado há ${line.updatedMinutesAgo}m por passageiros",
-                                    color = TextExpressiveMuted,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 11.sp
                                 )
                             }
@@ -202,10 +202,18 @@ fun CitizenMetroScreen(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Claro", showBackground = true)
 @Composable
 fun PreviewCitizenMetroScreen() {
-    CitizenSPTheme {
+    CitizenSPTheme(darkTheme = false) {
+        CitizenMetroScreen()
+    }
+}
+
+@Preview(name = "Escuro", showBackground = true)
+@Composable
+fun PreviewCitizenMetroScreenDark() {
+    CitizenSPTheme(darkTheme = true) {
         CitizenMetroScreen()
     }
 }

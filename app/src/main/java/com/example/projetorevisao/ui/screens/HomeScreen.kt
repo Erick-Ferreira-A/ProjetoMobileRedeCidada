@@ -40,7 +40,7 @@ fun CitizenHomeScreen(
     val filters = listOf("Todos (12)", "📱 Furtos (6)", "🌧️ Alagamentos (3)", "🚆 Metrô/CPTM (2)", "⚠️ Escuro (1)")
     var selectedFilter by remember { mutableStateOf("Todos (12)") }
 
-    val mockIncidents = remember {
+    val mockIncidents = run {
         listOf(
             Incident(
                 id = "1",
@@ -67,7 +67,7 @@ fun CitizenHomeScreen(
                 title = "Operação Lenta Linha 4-Amarela",
                 location = "Estação Paulista — Consolação",
                 distanceTime = "800m • há 35 min",
-                categoryColor = AccentCyan,
+                categoryColor = MaterialTheme.colorScheme.primary,
                 emoji = "🚆",
                 confirmations = 32,
                 aiTip = null
@@ -78,16 +78,16 @@ fun CitizenHomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ObsidianBackground)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
             // Header Top Bar
             Surface(
-                color = SurfaceDarkHeader,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
                 tonalElevation = 6.dp,
-                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SurfaceBorderGlow))
+                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.outlineVariant))
             ) {
                 Column(
                     modifier = Modifier
@@ -102,8 +102,8 @@ fun CitizenHomeScreen(
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "🛡️ Citizen SP",
-                                    color = TextExpressivePrimary,
+                                    text = "Rede Cidadã",
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.ExtraBold
                                 )
@@ -113,7 +113,7 @@ fun CitizenHomeScreen(
                                     shape = RoundedCornerShape(6.dp)
                                 ) {
                                     Text(
-                                        text = "LIVE",
+                                        text = "DEMO",
                                         color = AccentEmeraldSafe,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
@@ -123,7 +123,7 @@ fun CitizenHomeScreen(
                             }
                             Text(
                                 text = "Bela Vista, São Paulo — Feed Colaborativo",
-                                color = TextExpressiveSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp
                             )
                         }
@@ -131,7 +131,7 @@ fun CitizenHomeScreen(
                             onClick = { },
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .background(SurfaceDarkElevated)
+                                .background(MaterialTheme.colorScheme.surfaceContainer)
                         ) {
                             Text(text = "🔔", fontSize = 18.sp)
                         }
@@ -143,8 +143,8 @@ fun CitizenHomeScreen(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
-                        color = SurfaceDarkElevated,
-                        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(SurfaceBorderGlow))
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.outlineVariant))
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -154,7 +154,7 @@ fun CitizenHomeScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = "Pesquisar ruas ou trajetos em SP...",
-                                color = TextExpressiveSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 14.sp
                             )
                         }
@@ -173,13 +173,13 @@ fun CitizenHomeScreen(
                                 onClick = { selectedFilter = filter },
                                 label = { Text(filter, fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = AccentCyan,
-                                    selectedLabelColor = ObsidianBackground,
-                                    containerColor = SurfaceDarkElevated,
-                                    labelColor = TextExpressiveSecondary
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                 ),
                                 border = FilterChipDefaults.filterChipBorder(
-                                    borderColor = if (isSelected) AccentCyan else SurfaceBorderGlow,
+                                    borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                     enabled = true,
                                     selected = isSelected
                                 )
@@ -194,21 +194,21 @@ fun CitizenHomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .background(Color(0xFF0F172A)),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "🗺️ MAPA DE RISCO EM TEMPO REAL (SP)",
-                        color = AccentCyan,
+                        text = "🗺️ Mapa de São Paulo",
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "3 Incidentes Ativos num raio de 1.5km",
-                        color = TextExpressiveSecondary,
+                        text = "Prévia ilustrativa • dados demonstrativos",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }
@@ -218,7 +218,7 @@ fun CitizenHomeScreen(
             Surface(
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                color = SurfaceDarkCard
+                color = MaterialTheme.colorScheme.surface
             ) {
                 Column(
                     modifier = Modifier
@@ -232,17 +232,17 @@ fun CitizenHomeScreen(
                     ) {
                         Text(
                             text = "Ocorrências Recentes",
-                            color = TextExpressivePrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Button(
                             onClick = onReportClick,
-                            colors = ButtonDefaults.buttonColors(containerColor = AccentRoseCritical),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("+ Reportar", color = TextExpressivePrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("+ Reportar", color = MaterialTheme.colorScheme.onSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -255,8 +255,8 @@ fun CitizenHomeScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .border(1.dp, SurfaceBorderGlow, RoundedCornerShape(16.dp)),
-                                colors = CardDefaults.cardColors(containerColor = SurfaceDarkElevated),
+                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp)),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                                 shape = RoundedCornerShape(16.dp)
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
@@ -275,13 +275,13 @@ fun CitizenHomeScreen(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = incident.title,
-                                                color = TextExpressivePrimary,
+                                                color = MaterialTheme.colorScheme.onSurface,
                                                 fontSize = 15.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Text(
                                                 text = incident.location,
-                                                color = TextExpressiveSecondary,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 fontSize = 12.sp
                                             )
                                             Text(
@@ -317,11 +317,11 @@ fun CitizenHomeScreen(
                                     ) {
                                         Text(
                                             text = "👍 ${incident.confirmations} confirmações",
-                                            color = TextExpressiveMuted,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontSize = 11.sp
                                         )
                                         TextButton(onClick = { }) {
-                                            Text("Confirmar Veracidade", color = AccentCyan, fontSize = 12.sp)
+                                            Text("Confirmar Veracidade", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
                                         }
                                     }
                                 }
@@ -340,7 +340,7 @@ fun CitizenHomeScreen(
                 .padding(bottom = 24.dp, end = 20.dp)
                 .size(64.dp),
             containerColor = AccentRoseCritical,
-            contentColor = TextExpressivePrimary,
+            contentColor = Color.White,
             shape = CircleShape,
             elevation = FloatingActionButtonDefaults.elevation(8.dp)
         ) {
@@ -349,10 +349,18 @@ fun CitizenHomeScreen(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Claro", showBackground = true)
 @Composable
 fun PreviewCitizenHomeScreen() {
-    CitizenSPTheme {
+    CitizenSPTheme(darkTheme = false) {
+        CitizenHomeScreen()
+    }
+}
+
+@Preview(name = "Escuro", showBackground = true)
+@Composable
+fun PreviewCitizenHomeScreenDark() {
+    CitizenSPTheme(darkTheme = true) {
         CitizenHomeScreen()
     }
 }

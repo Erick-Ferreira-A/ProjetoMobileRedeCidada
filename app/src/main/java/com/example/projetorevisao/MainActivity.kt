@@ -3,6 +3,8 @@ package com.example.projetorevisao
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +18,7 @@ import com.example.projetorevisao.ui.theme.*
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             CitizenSPApp()
         }
@@ -25,13 +28,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CitizenSPApp() {
     CitizenSPTheme {
-        var currentScreen by remember { mutableStateOf("login") }
+        var currentScreen by rememberSaveable { mutableStateOf("login") }
 
         Scaffold(
             bottomBar = {
                 if (currentScreen != "login") {
                     NavigationBar(
-                        containerColor = SurfaceDarkHeader,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                         tonalElevation = 8.dp
                     ) {
                         NavigationBarItem(
@@ -40,11 +43,11 @@ fun CitizenSPApp() {
                             icon = { Text("🗺️", fontSize = 20.sp) },
                             label = { Text("Mapa & Feed", fontSize = 11.sp) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = AccentCyan,
-                                selectedTextColor = AccentCyan,
-                                indicatorColor = AccentCyan.copy(alpha = 0.2f),
-                                unselectedIconColor = TextExpressiveSecondary,
-                                unselectedTextColor = TextExpressiveSecondary
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         )
                         NavigationBarItem(
@@ -53,11 +56,11 @@ fun CitizenSPApp() {
                             icon = { Text("🚆", fontSize = 20.sp) },
                             label = { Text("Metrô SP", fontSize = 11.sp) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = AccentCyan,
-                                selectedTextColor = AccentCyan,
-                                indicatorColor = AccentCyan.copy(alpha = 0.2f),
-                                unselectedIconColor = TextExpressiveSecondary,
-                                unselectedTextColor = TextExpressiveSecondary
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         )
                         NavigationBarItem(
@@ -69,8 +72,8 @@ fun CitizenSPApp() {
                                 selectedIconColor = AccentRoseCritical,
                                 selectedTextColor = AccentRoseCritical,
                                 indicatorColor = AccentRoseCritical.copy(alpha = 0.2f),
-                                unselectedIconColor = TextExpressiveSecondary,
-                                unselectedTextColor = TextExpressiveSecondary
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         )
                         NavigationBarItem(
@@ -79,11 +82,11 @@ fun CitizenSPApp() {
                             icon = { Text("👤", fontSize = 20.sp) },
                             label = { Text("Perfil", fontSize = 11.sp) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = AccentCyan,
-                                selectedTextColor = AccentCyan,
-                                indicatorColor = AccentCyan.copy(alpha = 0.2f),
-                                unselectedIconColor = TextExpressiveSecondary,
-                                unselectedTextColor = TextExpressiveSecondary
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         )
                     }
@@ -92,7 +95,7 @@ fun CitizenSPApp() {
         ) { innerPadding ->
             Surface(
                 modifier = Modifier.padding(innerPadding),
-                color = ObsidianBackground
+                color = MaterialTheme.colorScheme.background
             ) {
                 when (currentScreen) {
                     "login" -> CitizenLoginScreen(

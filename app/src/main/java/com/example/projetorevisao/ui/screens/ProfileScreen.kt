@@ -1,6 +1,8 @@
 package com.example.projetorevisao.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -24,7 +26,8 @@ fun CitizenProfileScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ObsidianBackground)
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -35,8 +38,8 @@ fun CitizenProfileScreen() {
             modifier = Modifier
                 .size(84.dp)
                 .clip(CircleShape)
-                .background(SurfaceDarkElevated)
-                .border(2.dp, AccentCyan, CircleShape),
+                .background(MaterialTheme.colorScheme.surfaceContainer)
+                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text("👤", fontSize = 42.sp)
@@ -46,13 +49,13 @@ fun CitizenProfileScreen() {
 
         Text(
             text = "Erick Rondonia",
-            color = TextExpressivePrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 22.sp,
             fontWeight = FontWeight.ExtraBold
         )
         Text(
             text = "Morador de São Paulo • Nível 4 (Guardião Urbano)",
-            color = TextExpressiveSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp
         )
 
@@ -62,8 +65,8 @@ fun CitizenProfileScreen() {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, SurfaceBorderGlow, RoundedCornerShape(20.dp)),
-            colors = CardDefaults.cardColors(containerColor = SurfaceDarkCard),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(20.dp)
         ) {
             Row(
@@ -74,24 +77,24 @@ fun CitizenProfileScreen() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("⭐ Trust Score", color = TextExpressiveSecondary, fontSize = 12.sp)
+                    Text("⭐ Trust Score", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("98%", color = AccentEmeraldSafe, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("Verificado CPF", color = TextExpressiveMuted, fontSize = 10.sp)
+                    Text("Verificado CPF", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                 }
 
                 Box(
                     modifier = Modifier
                         .height(44.dp)
                         .width(1.dp)
-                        .background(SurfaceBorderGlow)
+                        .background(MaterialTheme.colorScheme.outlineVariant)
                 )
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🏆 Selo de Contribuição", color = TextExpressiveSecondary, fontSize = 12.sp)
+                    Text("🏆 Selo de Contribuição", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("Fiscal da Paulista", color = AccentAmberWarning, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("750 / 1000 XP", color = AccentCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text("750 / 1000 XP", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -102,21 +105,21 @@ fun CitizenProfileScreen() {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, SurfaceBorderGlow, RoundedCornerShape(20.dp)),
-            colors = CardDefaults.cardColors(containerColor = SurfaceDarkCard),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(20.dp)
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
                 Text(
                     text = "📡 Raio de Alerta Geofenced",
-                    color = TextExpressivePrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "Receba notificações em tempo real de furtos e alagamentos neste perímetro:",
-                    color = TextExpressiveSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
 
@@ -129,16 +132,16 @@ fun CitizenProfileScreen() {
                 ) {
                     Text(
                         text = "Perímetro Monitorado:",
-                        color = TextExpressiveSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
                     Surface(
-                        color = AccentCyan.copy(alpha = 0.15f),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             text = "${"%.1f".format(radiusKm)} km",
-                            color = AccentCyan,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 14.sp,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -153,9 +156,9 @@ fun CitizenProfileScreen() {
                     onValueChange = { radiusKm = it },
                     valueRange = 0.5f..5.0f,
                     colors = SliderDefaults.colors(
-                        thumbColor = AccentCyan,
-                        activeTrackColor = AccentCyan,
-                        inactiveTrackColor = SurfaceDarkElevated
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainer
                     )
                 )
             }
@@ -167,8 +170,8 @@ fun CitizenProfileScreen() {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, SurfaceBorderGlow, RoundedCornerShape(20.dp)),
-            colors = CardDefaults.cardColors(containerColor = SurfaceDarkCard),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(20.dp)
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
@@ -179,29 +182,37 @@ fun CitizenProfileScreen() {
                 ) {
                     Text(
                         text = "👥 Guardiões de Confiança (2/3)",
-                        color = TextExpressivePrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp
                     )
                     TextButton(onClick = { }) {
-                        Text("+ Adicionar", color = AccentCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("+ Adicionar", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                HorizontalDivider(color = SurfaceBorderGlow)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("• Maria R. (Mãe) — 🟢 Alertas Ativos", color = TextExpressiveSecondary, fontSize = 13.sp)
+                Text("• Maria R. (Mãe) — 🟢 Alertas Ativos", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("• Carlos A. (Irmão) — 🟢 Alertas Ativos", color = TextExpressiveSecondary, fontSize = 13.sp)
+                Text("• Carlos A. (Irmão) — 🟢 Alertas Ativos", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
             }
         }
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Claro", showBackground = true)
 @Composable
 fun PreviewCitizenProfileScreen() {
-    CitizenSPTheme {
+    CitizenSPTheme(darkTheme = false) {
+        CitizenProfileScreen()
+    }
+}
+
+@Preview(name = "Escuro", showBackground = true)
+@Composable
+fun PreviewCitizenProfileScreenDark() {
+    CitizenSPTheme(darkTheme = true) {
         CitizenProfileScreen()
     }
 }

@@ -1,6 +1,10 @@
 package com.example.projetorevisao.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,27 +25,29 @@ import com.example.projetorevisao.ui.theme.*
 fun CitizenLoginScreen(
     onLoginSuccess: () -> Unit = {}
 ) {
-    var emailOrPhone by remember { mutableStateOf("") }
-    var cpf by remember { mutableStateOf("") }
+    var emailOrPhone by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(SurfaceDarkHeader, ObsidianBackground)
+                    colors = listOf(MaterialTheme.colorScheme.surfaceContainerLow, MaterialTheme.colorScheme.background)
                 )
             )
-            .padding(24.dp),
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 32.dp),
         contentAlignment = Alignment.Center
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, SurfaceBorderGlow, RoundedCornerShape(24.dp)),
-            colors = CardDefaults.cardColors(containerColor = SurfaceDarkCard.copy(alpha = 0.95f)),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp)),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
             shape = RoundedCornerShape(24.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -53,8 +59,8 @@ fun CitizenLoginScreen(
                 Surface(
                     modifier = Modifier.size(72.dp),
                     shape = RoundedCornerShape(20.dp),
-                    color = AccentCyan.copy(alpha = 0.15f),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.horizontalGradient(listOf(AccentCyan, AccentPurpleAI)))
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primary, BrandOrange)))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(text = "🛡️", fontSize = 36.sp)
@@ -64,15 +70,15 @@ fun CitizenLoginScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Citizen SP",
-                    color = TextExpressivePrimary,
+                    text = "Rede Cidadã",
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 0.5.sp
                 )
                 Text(
                     text = "Rede Colaborativa de Segurança Urbana",
-                    color = TextExpressiveSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
 
@@ -81,14 +87,14 @@ fun CitizenLoginScreen(
                 OutlinedTextField(
                     value = emailOrPhone,
                     onValueChange = { emailOrPhone = it },
-                    label = { Text("E-mail ou Celular", color = TextExpressiveSecondary) },
+                    label = { Text("E-mail ou Celular", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = TextExpressivePrimary,
-                        unfocusedTextColor = TextExpressivePrimary,
-                        focusedContainerColor = SurfaceDarkElevated,
-                        unfocusedContainerColor = SurfaceDarkElevated,
-                        focusedBorderColor = AccentCyan,
-                        unfocusedBorderColor = SurfaceBorderGlow
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     ),
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
@@ -98,16 +104,17 @@ fun CitizenLoginScreen(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 OutlinedTextField(
-                    value = cpf,
-                    onValueChange = { cpf = it },
-                    label = { Text("CPF (Validação Anti-Fake)", color = TextExpressiveSecondary) },
+                    value = password,
+                    onValueChange = { password = it },
+                    visualTransformation = PasswordVisualTransformation(),
+                    label = { Text("Senha", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = TextExpressivePrimary,
-                        unfocusedTextColor = TextExpressivePrimary,
-                        focusedContainerColor = SurfaceDarkElevated,
-                        unfocusedContainerColor = SurfaceDarkElevated,
-                        focusedBorderColor = AccentCyan,
-                        unfocusedBorderColor = SurfaceBorderGlow
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     ),
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth(),
@@ -121,15 +128,15 @@ fun CitizenLoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentRoseCritical),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(14.dp),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
                 ) {
                     Text(
-                        text = "ENTRAR NO CITIZEN SP",
+                        text = "Explorar demonstração",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextExpressivePrimary,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         letterSpacing = 0.5.sp
                     )
                 }
@@ -137,8 +144,8 @@ fun CitizenLoginScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "🔒 Seus dados são protegidos por criptografia e validados via GOV.BR / SSP-SP",
-                    color = TextExpressiveMuted,
+                    text = "Versão demonstrativa. Autenticação ainda não conectada; não informe dados reais.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 )
             }
@@ -146,10 +153,18 @@ fun CitizenLoginScreen(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Claro", showBackground = true)
 @Composable
 fun PreviewCitizenLoginScreen() {
-    CitizenSPTheme {
+    CitizenSPTheme(darkTheme = false) {
+        CitizenLoginScreen()
+    }
+}
+
+@Preview(name = "Escuro", showBackground = true)
+@Composable
+fun PreviewCitizenLoginScreenDark() {
+    CitizenSPTheme(darkTheme = true) {
         CitizenLoginScreen()
     }
 }

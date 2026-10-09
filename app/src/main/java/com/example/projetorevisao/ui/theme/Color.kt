@@ -9,6 +9,8 @@ val SurfaceDarkCard = Color(0xFF192238)        // Primary Card Background
 val SurfaceDarkElevated = Color(0xFF232F4D)    // Sub-card & Input Field Container
 val SurfaceBorderGlow = Color(0xFF2E3D66)      // 1dp Card Border Stroke
 
+val BrandBlue = Color(0xFF244294)
+val BrandOrange = Color(0xFFFF6B00)
 // M3 Expressive Accents & Badges
 val AccentCyan = Color(0xFF38BDF8)             // Primary Interactive & Branding (Cyan-400)
 val AccentRoseCritical = Color(0xFFF43F5E)     // Emergency SOS & High Risk Alert (Rose-500)

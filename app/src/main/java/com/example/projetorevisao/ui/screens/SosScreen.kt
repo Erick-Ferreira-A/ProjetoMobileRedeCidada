@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -24,7 +25,7 @@ fun CitizenSosScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ObsidianBackground)
+            .background(MaterialTheme.colorScheme.background)
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
@@ -35,7 +36,7 @@ fun CitizenSosScreen(
                 horizontalArrangement = Arrangement.Start
             ) {
                 TextButton(onClick = onBackClick) {
-                    Text("← Voltar ao Início", color = AccentCyan, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text("← Voltar ao Início", color = MaterialTheme.colorScheme.primary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -64,7 +65,7 @@ fun CitizenSosScreen(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "São Paulo — Discagem Rápida & Envio de Sinal GPS",
-                color = TextExpressiveSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp
             )
         }
@@ -86,7 +87,7 @@ fun CitizenSosScreen(
             EmergencyButton(
                 title = "🚒 Ligar 193 — Bombeiros",
                 subtitle = "Corpo de Bombeiros SP",
-                color = AccentCyan
+                color = MaterialTheme.colorScheme.primary
             )
         }
 
@@ -94,8 +95,8 @@ fun CitizenSosScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, SurfaceBorderGlow, RoundedCornerShape(18.dp)),
-            colors = CardDefaults.cardColors(containerColor = SurfaceDarkCard),
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(18.dp)),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(18.dp)
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
@@ -104,7 +105,7 @@ fun CitizenSosScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Modo Guardião / Coação Silencioso",
-                        color = TextExpressivePrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp
                     )
@@ -112,7 +113,7 @@ fun CitizenSosScreen(
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "Mantenha o botão SOS pressionado por 3s para enviar alertas de geolocalização e áudio ao vivo aos seus 2 Guardiões Cadastrados.",
-                    color = TextExpressiveSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 )
@@ -137,17 +138,25 @@ private fun EmergencyButton(
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = title, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = TextExpressivePrimary)
+            Text(text = title, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = if (color.luminance() > 0.179f) ObsidianBackground else Color.White)
             Spacer(modifier = Modifier.height(2.dp))
-            Text(text = subtitle, fontSize = 11.sp, color = TextExpressivePrimary.copy(alpha = 0.85f))
+            Text(text = subtitle, fontSize = 11.sp, color = (if (color.luminance() > 0.179f) ObsidianBackground else Color.White).copy(alpha = 0.85f))
         }
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Claro", showBackground = true)
 @Composable
 fun PreviewCitizenSosScreen() {
-    CitizenSPTheme {
+    CitizenSPTheme(darkTheme = false) {
+        CitizenSosScreen()
+    }
+}
+
+@Preview(name = "Escuro", showBackground = true)
+@Composable
+fun PreviewCitizenSosScreenDark() {
+    CitizenSPTheme(darkTheme = true) {
         CitizenSosScreen()
     }
 }
