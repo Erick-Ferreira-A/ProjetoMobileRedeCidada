@@ -6,17 +6,19 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
 private val CitizenDarkColorScheme = darkColorScheme(
-    primary = AlertCritical,
-    secondary = AlertTransit,
-    tertiary = AlertWarning,
-    background = CitizenBackground,
-    surface = CitizenSurface,
-    surfaceVariant = CitizenSurfaceElevated,
-    onPrimary = TextPrimary,
-    onSecondary = TextPrimary,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary,
-    onSurfaceVariant = TextSecondary
+    primary = AccentCyan,
+    onPrimary = ObsidianBackground,
+    secondary = AccentRoseCritical,
+    onSecondary = TextExpressivePrimary,
+    tertiary = AccentAmberWarning,
+    onTertiary = ObsidianBackground,
+    background = ObsidianBackground,
+    onBackground = TextExpressivePrimary,
+    surface = SurfaceDarkCard,
+    onSurface = TextExpressivePrimary,
+    surfaceVariant = SurfaceDarkElevated,
+    onSurfaceVariant = TextExpressiveSecondary,
+    outline = SurfaceBorderGlow
 )
 
 @Composable

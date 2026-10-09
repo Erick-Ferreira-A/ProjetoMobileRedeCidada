@@ -25,40 +25,66 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CitizenSPApp() {
     CitizenSPTheme {
-        // Começa na tela de LOGIN para fluxo real completo
         var currentScreen by remember { mutableStateOf("login") }
 
         Scaffold(
             bottomBar = {
-                // Exibe a barra de navegação apenas após o login
                 if (currentScreen != "login") {
                     NavigationBar(
-                        containerColor = CitizenSurface,
+                        containerColor = SurfaceDarkHeader,
                         tonalElevation = 8.dp
                     ) {
                         NavigationBarItem(
                             selected = currentScreen == "home",
                             onClick = { currentScreen = "home" },
-                            icon = { Text("🗺️", fontSize = 18.sp) },
-                            label = { Text("Home", fontSize = 11.sp) }
+                            icon = { Text("🗺️", fontSize = 20.sp) },
+                            label = { Text("Mapa & Feed", fontSize = 11.sp) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = AccentCyan,
+                                selectedTextColor = AccentCyan,
+                                indicatorColor = AccentCyan.copy(alpha = 0.2f),
+                                unselectedIconColor = TextExpressiveSecondary,
+                                unselectedTextColor = TextExpressiveSecondary
+                            )
                         )
                         NavigationBarItem(
                             selected = currentScreen == "metro",
                             onClick = { currentScreen = "metro" },
-                            icon = { Text("🚆", fontSize = 18.sp) },
-                            label = { Text("Metrô SP", fontSize = 11.sp) }
+                            icon = { Text("🚆", fontSize = 20.sp) },
+                            label = { Text("Metrô SP", fontSize = 11.sp) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = AccentCyan,
+                                selectedTextColor = AccentCyan,
+                                indicatorColor = AccentCyan.copy(alpha = 0.2f),
+                                unselectedIconColor = TextExpressiveSecondary,
+                                unselectedTextColor = TextExpressiveSecondary
+                            )
                         )
                         NavigationBarItem(
                             selected = currentScreen == "sos",
                             onClick = { currentScreen = "sos" },
-                            icon = { Text("🚨", fontSize = 18.sp) },
-                            label = { Text("SOS", fontSize = 11.sp) }
+                            icon = { Text("🚨", fontSize = 20.sp) },
+                            label = { Text("SOS", fontSize = 11.sp) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = AccentRoseCritical,
+                                selectedTextColor = AccentRoseCritical,
+                                indicatorColor = AccentRoseCritical.copy(alpha = 0.2f),
+                                unselectedIconColor = TextExpressiveSecondary,
+                                unselectedTextColor = TextExpressiveSecondary
+                            )
                         )
                         NavigationBarItem(
                             selected = currentScreen == "profile",
                             onClick = { currentScreen = "profile" },
-                            icon = { Text("👤", fontSize = 18.sp) },
-                            label = { Text("Perfil", fontSize = 11.sp) }
+                            icon = { Text("👤", fontSize = 20.sp) },
+                            label = { Text("Perfil", fontSize = 11.sp) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = AccentCyan,
+                                selectedTextColor = AccentCyan,
+                                indicatorColor = AccentCyan.copy(alpha = 0.2f),
+                                unselectedIconColor = TextExpressiveSecondary,
+                                unselectedTextColor = TextExpressiveSecondary
+                            )
                         )
                     }
                 }
@@ -66,7 +92,7 @@ fun CitizenSPApp() {
         ) { innerPadding ->
             Surface(
                 modifier = Modifier.padding(innerPadding),
-                color = CitizenBackground
+                color = ObsidianBackground
             ) {
                 when (currentScreen) {
                     "login" -> CitizenLoginScreen(

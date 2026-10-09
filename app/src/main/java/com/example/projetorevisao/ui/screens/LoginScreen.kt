@@ -1,12 +1,16 @@
 package com.example.projetorevisao.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -23,71 +27,120 @@ fun CitizenLoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CitizenBackground)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(SurfaceDarkHeader, ObsidianBackground)
+                )
+            )
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, SurfaceBorderGlow, RoundedCornerShape(24.dp)),
+            colors = CardDefaults.cardColors(containerColor = SurfaceDarkCard.copy(alpha = 0.95f)),
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            Text(text = "🛡️", fontSize = 48.sp)
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "Citizen SP",
-                color = TextPrimary,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Rede Social Urbana & Segurança em Tempo Real",
-                color = TextSecondary,
-                fontSize = 13.sp
-            )
-
-            Spacer(modifier = Modifier.height(36.dp))
-
-            OutlinedTextField(
-                value = emailOrPhone,
-                onValueChange = { emailOrPhone = it },
-                label = { Text("E-mail ou Celular", color = TextSecondary) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary,
-                    focusedContainerColor = CitizenSurface,
-                    unfocusedContainerColor = CitizenSurface
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = cpf,
-                onValueChange = { cpf = it },
-                label = { Text("CPF (Para Verificação Anti-Fake)", color = TextSecondary) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary,
-                    focusedContainerColor = CitizenSurface,
-                    unfocusedContainerColor = CitizenSurface
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            Button(
-                onClick = onLoginSuccess,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AlertCritical),
-                shape = RoundedCornerShape(12.dp)
+                    .padding(28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Entrar / Criar Conta", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                // Brand Logo Badge
+                Surface(
+                    modifier = Modifier.size(72.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    color = AccentCyan.copy(alpha = 0.15f),
+                    border = CardDefaults.outlinedCardBorder().copy(brush = Brush.horizontalGradient(listOf(AccentCyan, AccentPurpleAI)))
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(text = "🛡️", fontSize = 36.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Citizen SP",
+                    color = TextExpressivePrimary,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 0.5.sp
+                )
+                Text(
+                    text = "Rede Colaborativa de Segurança Urbana",
+                    color = TextExpressiveSecondary,
+                    fontSize = 13.sp
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                OutlinedTextField(
+                    value = emailOrPhone,
+                    onValueChange = { emailOrPhone = it },
+                    label = { Text("E-mail ou Celular", color = TextExpressiveSecondary) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TextExpressivePrimary,
+                        unfocusedTextColor = TextExpressivePrimary,
+                        focusedContainerColor = SurfaceDarkElevated,
+                        unfocusedContainerColor = SurfaceDarkElevated,
+                        focusedBorderColor = AccentCyan,
+                        unfocusedBorderColor = SurfaceBorderGlow
+                    ),
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                OutlinedTextField(
+                    value = cpf,
+                    onValueChange = { cpf = it },
+                    label = { Text("CPF (Validação Anti-Fake)", color = TextExpressiveSecondary) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TextExpressivePrimary,
+                        unfocusedTextColor = TextExpressivePrimary,
+                        focusedContainerColor = SurfaceDarkElevated,
+                        unfocusedContainerColor = SurfaceDarkElevated,
+                        focusedBorderColor = AccentCyan,
+                        unfocusedBorderColor = SurfaceBorderGlow
+                    ),
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                Button(
+                    onClick = onLoginSuccess,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentRoseCritical),
+                    shape = RoundedCornerShape(14.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
+                ) {
+                    Text(
+                        text = "ENTRAR NO CITIZEN SP",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextExpressivePrimary,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "🔒 Seus dados são protegidos por criptografia e validados via GOV.BR / SSP-SP",
+                    color = TextExpressiveMuted,
+                    fontSize = 11.sp
+                )
             }
         }
     }
