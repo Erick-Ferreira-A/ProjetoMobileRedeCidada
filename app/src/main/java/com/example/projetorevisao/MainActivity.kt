@@ -25,38 +25,42 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CitizenSPApp() {
     CitizenSPTheme {
-        var currentScreen by remember { mutableStateOf("home") }
+        // Começa na tela de LOGIN para fluxo real completo
+        var currentScreen by remember { mutableStateOf("login") }
 
         Scaffold(
             bottomBar = {
-                NavigationBar(
-                    containerColor = CitizenSurface,
-                    tonalElevation = 8.dp
-                ) {
-                    NavigationBarItem(
-                        selected = currentScreen == "home",
-                        onClick = { currentScreen = "home" },
-                        icon = { Text("🗺️", fontSize = 18.sp) },
-                        label = { Text("Home", fontSize = 11.sp) }
-                    )
-                    NavigationBarItem(
-                        selected = currentScreen == "metro",
-                        onClick = { currentScreen = "metro" },
-                        icon = { Text("🚆", fontSize = 18.sp) },
-                        label = { Text("Metrô SP", fontSize = 11.sp) }
-                    )
-                    NavigationBarItem(
-                        selected = currentScreen == "sos",
-                        onClick = { currentScreen = "sos" },
-                        icon = { Text("🚨", fontSize = 18.sp) },
-                        label = { Text("SOS", fontSize = 11.sp) }
-                    )
-                    NavigationBarItem(
-                        selected = currentScreen == "profile",
-                        onClick = { currentScreen = "profile" },
-                        icon = { Text("👤", fontSize = 18.sp) },
-                        label = { Text("Perfil", fontSize = 11.sp) }
-                    )
+                // Exibe a barra de navegação apenas após o login
+                if (currentScreen != "login") {
+                    NavigationBar(
+                        containerColor = CitizenSurface,
+                        tonalElevation = 8.dp
+                    ) {
+                        NavigationBarItem(
+                            selected = currentScreen == "home",
+                            onClick = { currentScreen = "home" },
+                            icon = { Text("🗺️", fontSize = 18.sp) },
+                            label = { Text("Home", fontSize = 11.sp) }
+                        )
+                        NavigationBarItem(
+                            selected = currentScreen == "metro",
+                            onClick = { currentScreen = "metro" },
+                            icon = { Text("🚆", fontSize = 18.sp) },
+                            label = { Text("Metrô SP", fontSize = 11.sp) }
+                        )
+                        NavigationBarItem(
+                            selected = currentScreen == "sos",
+                            onClick = { currentScreen = "sos" },
+                            icon = { Text("🚨", fontSize = 18.sp) },
+                            label = { Text("SOS", fontSize = 11.sp) }
+                        )
+                        NavigationBarItem(
+                            selected = currentScreen == "profile",
+                            onClick = { currentScreen = "profile" },
+                            icon = { Text("👤", fontSize = 18.sp) },
+                            label = { Text("Perfil", fontSize = 11.sp) }
+                        )
+                    }
                 }
             }
         ) { innerPadding ->
