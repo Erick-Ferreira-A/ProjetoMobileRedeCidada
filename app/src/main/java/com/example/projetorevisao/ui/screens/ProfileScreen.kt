@@ -79,7 +79,7 @@ fun CitizenProfileScreen() {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("⭐ Trust Score", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("98%", color = AccentEmeraldSafe, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("98%", color = CitizenStatusColors.safe, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
                     Text("Verificado CPF", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                 }
 
@@ -93,7 +93,7 @@ fun CitizenProfileScreen() {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("🏆 Selo de Contribuição", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("Fiscal da Paulista", color = AccentAmberWarning, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("Fiscal da Paulista", color = CitizenStatusColors.warning, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
                     Text("750 / 1000 XP", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }

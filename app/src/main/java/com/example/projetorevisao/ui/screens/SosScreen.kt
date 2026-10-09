@@ -45,8 +45,8 @@ fun CitizenSosScreen(
             Surface(
                 modifier = Modifier.size(64.dp),
                 shape = CircleShape,
-                color = AccentRoseCritical.copy(alpha = 0.2f),
-                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(AccentRoseCritical))
+                color = CitizenStatusColors.critical.copy(alpha = 0.2f),
+                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CitizenStatusColors.critical))
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text("🚨", fontSize = 32.sp)
@@ -57,7 +57,7 @@ fun CitizenSosScreen(
 
             Text(
                 text = "CENTRAL DE EMERGÊNCIA SP",
-                color = AccentRoseCritical,
+                color = CitizenStatusColors.critical,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 0.5.sp
@@ -77,12 +77,12 @@ fun CitizenSosScreen(
             EmergencyButton(
                 title = "👮 Ligar 190 — PMESP",
                 subtitle = "Polícia Militar do Estado de São Paulo",
-                color = AccentRoseCritical
+                color = CitizenStatusColors.critical
             )
             EmergencyButton(
                 title = "🚑 Ligar 192 — SAMU",
                 subtitle = "Atendimento Móvel de Urgência",
-                color = AccentAmberWarning
+                color = CitizenStatusColors.warning
             )
             EmergencyButton(
                 title = "🚒 Ligar 193 — Bombeiros",

@@ -1,6 +1,10 @@
 package com.example.projetorevisao.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 
 // Material 3 Expressive - Premium Dark Theme Palette (Android & M3 Standards)
 val ObsidianBackground = Color(0xFF0B0F17)     // Deep Dark Background
@@ -34,3 +38,25 @@ val StatusSafe = AccentEmeraldSafe
 val TextPrimary = TextExpressivePrimary
 val TextSecondary = TextExpressiveSecondary
 val TextMuted = TextExpressiveMuted
+// Status text needs different tones on light and dark surfaces.
+object CitizenStatusColors {
+    private val isLight: Boolean
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.background.luminance() > 0.5f
+
+    val critical: Color
+        @Composable @ReadOnlyComposable
+        get() = if (isLight) Color(0xFFB42342) else AccentRoseCritical
+
+    val warning: Color
+        @Composable @ReadOnlyComposable
+        get() = if (isLight) Color(0xFF895100) else AccentAmberWarning
+
+    val safe: Color
+        @Composable @ReadOnlyComposable
+        get() = if (isLight) Color(0xFF007A55) else AccentEmeraldSafe
+
+    val insight: Color
+        @Composable @ReadOnlyComposable
+        get() = if (isLight) Color(0xFF7031AE) else Color(0xFFC792FF)
+}

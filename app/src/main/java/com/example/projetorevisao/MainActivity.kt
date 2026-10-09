@@ -69,9 +69,9 @@ fun CitizenSPApp() {
                             icon = { Text("🚨", fontSize = 20.sp) },
                             label = { Text("SOS", fontSize = 11.sp) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = AccentRoseCritical,
-                                selectedTextColor = AccentRoseCritical,
-                                indicatorColor = AccentRoseCritical.copy(alpha = 0.2f),
+                                selectedIconColor = CitizenStatusColors.critical,
+                                selectedTextColor = CitizenStatusColors.critical,
+                                indicatorColor = CitizenStatusColors.critical.copy(alpha = 0.2f),
                                 unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )

@@ -36,13 +36,13 @@ fun CitizenMetroScreen(
     onLineClick: (String) -> Unit = {}
 ) {
     val metroLines = listOf(
-        MetroLine("Linha 1 - Azul (Jabaquara ↔ Tucuruvi)", "✅ Operação Normal", AccentEmeraldSafe, "Livre", Color(0xFF0054A6), 2),
-        MetroLine("Linha 2 - Verde (Vila Prudente ↔ Vila Madalena)", "✅ Operação Normal", AccentEmeraldSafe, "Livre", Color(0xFF00805D), 5),
-        MetroLine("Linha 3 - Vermelha (Palmeiras-Barra Funda ↔ Corinthians-Itaquera)", "⚠️ Plataforma Cheia na Estação Luz", AccentAmberWarning, "Lotado", Color(0xFFEE3338), 1),
-        MetroLine("Linha 4 - Amarela (Vila Sônia ↔ Luz)", "✅ Operação Normal", AccentEmeraldSafe, "Moderado", Color(0xFFFFF000), 3),
-        MetroLine("Linha 5 - Lilás (Capão Redondo ↔ Chácara Klabin)", "✅ Operação Normal", AccentEmeraldSafe, "Livre", Color(0xFFA0529C), 8),
-        MetroLine("Linha 8 - Diamante (CPTM - Júlio Prestes ↔ Amador Bueno)", "🚨 Manutenção Emergencial / Lentidão", AccentRoseCritical, "Interditado", Color(0xFF97A098), 4),
-        MetroLine("Linha 9 - Esmeralda (CPTM - Osasco ↔ Bruno Covas/Mendes-Vila Natal)", "✅ Operação Normal", AccentEmeraldSafe, "Livre", Color(0xFF00A88F), 6)
+        MetroLine("Linha 1 - Azul (Jabaquara ↔ Tucuruvi)", "✅ Operação Normal", CitizenStatusColors.safe, "Livre", Color(0xFF0054A6), 2),
+        MetroLine("Linha 2 - Verde (Vila Prudente ↔ Vila Madalena)", "✅ Operação Normal", CitizenStatusColors.safe, "Livre", Color(0xFF00805D), 5),
+        MetroLine("Linha 3 - Vermelha (Palmeiras-Barra Funda ↔ Corinthians-Itaquera)", "⚠️ Plataforma Cheia na Estação Luz", CitizenStatusColors.warning, "Lotado", Color(0xFFEE3338), 1),
+        MetroLine("Linha 4 - Amarela (Vila Sônia ↔ Luz)", "✅ Operação Normal", CitizenStatusColors.safe, "Moderado", Color(0xFFFFF000), 3),
+        MetroLine("Linha 5 - Lilás (Capão Redondo ↔ Chácara Klabin)", "✅ Operação Normal", CitizenStatusColors.safe, "Livre", Color(0xFFA0529C), 8),
+        MetroLine("Linha 8 - Diamante (CPTM - Júlio Prestes ↔ Amador Bueno)", "🚨 Manutenção Emergencial / Lentidão", CitizenStatusColors.critical, "Interditado", Color(0xFF97A098), 4),
+        MetroLine("Linha 9 - Esmeralda (CPTM - Osasco ↔ Bruno Covas/Mendes-Vila Natal)", "✅ Operação Normal", CitizenStatusColors.safe, "Livre", Color(0xFF00A88F), 6)
     )
 
     Column(
@@ -90,7 +90,7 @@ fun CitizenMetroScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, AccentPurpleAI.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
+                .border(1.dp, CitizenStatusColors.insight.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
             shape = RoundedCornerShape(16.dp)
         ) {
@@ -102,7 +102,7 @@ fun CitizenMetroScreen(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(AccentPurpleAI.copy(alpha = 0.2f)),
+                        .background(CitizenStatusColors.insight.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("🤖", fontSize = 20.sp)
@@ -111,7 +111,7 @@ fun CitizenMetroScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Resumo do Trânsito SP (Gemini IA)",
-                        color = AccentPurpleAI,
+                        color = CitizenStatusColors.insight,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )

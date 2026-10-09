@@ -47,7 +47,7 @@ fun CitizenHomeScreen(
                 title = "Furto de Celular (Alerta Rápido)",
                 location = "Av. Paulista, 1578 — Bela Vista",
                 distanceTime = "200m • há 4 min",
-                categoryColor = AccentRoseCritical,
+                categoryColor = CitizenStatusColors.critical,
                 emoji = "📱",
                 confirmations = 14,
                 aiTip = "Gemini Safety: Mantenha dispositivos nos bolsos internos na saída do metrô Trianon."
@@ -57,7 +57,7 @@ fun CitizenHomeScreen(
                 title = "Ponto de Alagamento Ativo (CGE SP)",
                 location = "Marginal Pinheiros próx. Ponte Cidade Jardim",
                 distanceTime = "1.2km • há 18 min",
-                categoryColor = AccentAmberWarning,
+                categoryColor = CitizenStatusColors.warning,
                 emoji = "🌧️",
                 confirmations = 8,
                 aiTip = "Defesa Civil: Evitar a pista expressa sentido Interlagos."
@@ -109,12 +109,12 @@ fun CitizenHomeScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Surface(
-                                    color = AccentEmeraldSafe.copy(alpha = 0.2f),
+                                    color = CitizenStatusColors.safe.copy(alpha = 0.2f),
                                     shape = RoundedCornerShape(6.dp)
                                 ) {
                                     Text(
                                         text = "DEMO",
-                                        color = AccentEmeraldSafe,
+                                        color = CitizenStatusColors.safe,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -208,7 +208,7 @@ fun CitizenHomeScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Prévia ilustrativa • dados demonstrativos",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         fontSize = 12.sp
                     )
                 }
@@ -296,12 +296,12 @@ fun CitizenHomeScreen(
                                     incident.aiTip?.let { tip ->
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Surface(
-                                            color = AccentPurpleAI.copy(alpha = 0.15f),
+                                            color = CitizenStatusColors.insight.copy(alpha = 0.15f),
                                             shape = RoundedCornerShape(8.dp)
                                         ) {
                                             Text(
                                                 text = tip,
-                                                color = AccentPurpleAI,
+                                                color = CitizenStatusColors.insight,
                                                 fontSize = 11.sp,
                                                 modifier = Modifier.padding(8.dp)
                                             )
@@ -339,7 +339,7 @@ fun CitizenHomeScreen(
                 .align(Alignment.BottomEnd)
                 .padding(bottom = 24.dp, end = 20.dp)
                 .size(64.dp),
-            containerColor = AccentRoseCritical,
+            containerColor = CitizenStatusColors.critical,
             contentColor = Color.White,
             shape = CircleShape,
             elevation = FloatingActionButtonDefaults.elevation(8.dp)
