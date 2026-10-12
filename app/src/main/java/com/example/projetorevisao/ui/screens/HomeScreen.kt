@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import com.example.projetorevisao.data.remote.SspDistrictTelemetry
 import com.example.projetorevisao.data.remote.WeatherSafetyTelemetry
 import com.example.projetorevisao.ui.components.CitizenIcons
+import com.example.projetorevisao.ui.components.CitizenInteractiveMapContainer
 import com.example.projetorevisao.ui.components.RedeCidadaLogo
 import com.example.projetorevisao.ui.theme.BrandBlue
 import com.example.projetorevisao.ui.theme.BrandBlueHero
@@ -419,232 +420,18 @@ private fun InteractiveIncidentMapCard(
     onPinClick: (IncidentAlert) -> Unit,
     onReportClick: () -> Unit
 ) {
-    Card(
+    CitizenInteractiveMapContainer(
+        neighborhood = neighborhood,
+        incidents = incidents,
+        showHeatmap = showHeatmap,
+        smartSampaCameras = smartSampaCameras,
+        onToggleHeatmap = onToggleHeatmap,
+        onPinClick = onPinClick,
+        onReportClick = onReportClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(255.dp),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Vector Urban Map Canvas (Figma 32:781)
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawRect(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF101C33),
-                            Color(0xFF162747),
-                            Color(0xFF0E182C)
-                        )
-                    )
-                )
-
-                // Green Park Zone (Parque Santo Dias / Urban Park)
-                drawRoundRect(
-                    color = Color(0xFF10B981).copy(alpha = 0.14f),
-                    topLeft = Offset(size.width * 0.68f, size.height * 0.08f),
-                    size = androidx.compose.ui.geometry.Size(size.width * 0.28f, size.height * 0.34f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(24f, 24f)
-                )
-
-                // Street grid lines
-                val gridColor = Color.White.copy(alpha = 0.08f)
-                for (i in 1..5) {
-                    val y = size.height * (i / 6f)
-                    drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 2f)
-                }
-                for (i in 1..6) {
-                    val x = size.width * (i / 7f)
-                    drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 2f)
-                }
-
-                // Main Arterial Avenue (Estrada de Itapecerica / Av. Carlos Caldeira Filho)
-                drawLine(
-                    color = Color(0xFF38BDF8).copy(alpha = 0.30f),
-                    start = Offset(0f, size.height * 0.72f),
-                    end = Offset(size.width, size.height * 0.22f),
-                    strokeWidth = 9f
-                )
-
-                // Metro Line 5-Lilás Dashed Track
-                drawLine(
-                    color = Color(0xFFC084FC).copy(alpha = 0.55f),
-                    start = Offset(size.width * 0.08f, size.height * 0.30f),
-                    end = Offset(size.width * 0.92f, size.height * 0.58f),
-                    strokeWidth = 5f,
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(16f, 12f), 0f)
-                )
-
-                // Heatmap zones when enabled
-                if (showHeatmap) {
-                    incidents.forEach { alert ->
-                        drawCircle(
-                            color = alert.category.badgeColor.copy(alpha = 0.24f),
-                            radius = 68f,
-                            center = Offset(
-                                size.width * alert.mapXFraction,
-                                size.height * alert.mapYFraction
-                            )
-                        )
-                    }
-                }
-
-                // User current GPS pulse dot in the center
-                val userCenter = Offset(size.width * 0.46f, size.height * 0.50f)
-                drawCircle(
-                    color = BrandBlueHero.copy(alpha = 0.30f),
-                    radius = 28f,
-                    center = userCenter
-                )
-                drawCircle(
-                    color = Color.White,
-                    radius = 9f,
-                    center = userCenter
-                )
-                drawCircle(
-                    color = BrandBlueHero,
-                    radius = 6f,
-                    center = userCenter
-                )
-            }
-
-            // Top-left Live Radar & Smart Sampa Badge
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color.Black.copy(alpha = 0.62f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background( Color(0xFF34D399))
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Google Maps + Smart Sampa ($smartSampaCameras câmeras)",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-
-            // Clickable Incident Pins (Figma 32:796)
-            androidx.compose.foundation.layout.BoxWithConstraints(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                val mapWidthPx = constraints.maxWidth
-                val mapHeightPx = constraints.maxHeight
-
-                incidents.forEach { alert ->
-                    val pinX = (mapWidthPx * alert.mapXFraction).roundToInt() - 36
-                    val pinY = (mapHeightPx * alert.mapYFraction).roundToInt() - 36
-
-                    Surface(
-                        shape = CircleShape,
-                        color = alert.category.badgeColor,
-                        border = BorderStroke(2.dp, Color.White),
-                        shadowElevation = 6.dp,
-                        modifier = Modifier
-                            .offset { IntOffset(pinX, pinY) }
-                            .size(34.dp)
-                            .clickable { onPinClick(alert) }
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = categoryIcon(alert.category),
-                                contentDescription = alert.title,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Right-side Map Controls (Figma 32:824 - MyLocation & Heatmap Layers)
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = Color.White,
-                    shadowElevation = 4.dp,
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clickable(onClick = onToggleHeatmap)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = CitizenIcons.Layers,
-                            contentDescription = "Alternar Mancha de Calor",
-                            tint = if (showHeatmap) BrandOrange else BrandNavyDark,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = Color.White,
-                    shadowElevation = 4.dp,
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clickable(onClick = onReportClick)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = CitizenIcons.Add,
-                            contentDescription = "Adicionar Alerta no Mapa",
-                            tint = BrandBlue,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-
-            // Bottom Location Pill (Figma 32:838 "Capão Redondo, São Paulo - Zona Sul")
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color.White.copy(alpha = 0.94f),
-                shadowElevation = 4.dp,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = CitizenIcons.LocationPin,
-                        contentDescription = null,
-                        tint = BrandBlue,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = neighborhood,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = BrandNavyDark,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-    }
+            .height(265.dp)
+    )
 }
 
 @Composable

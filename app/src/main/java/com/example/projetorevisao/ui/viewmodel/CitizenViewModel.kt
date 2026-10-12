@@ -91,6 +91,8 @@ data class IncidentAlert(
     val isAnonymous: Boolean,
     val mapXFraction: Float,
     val mapYFraction: Float,
+    val latitude: Double = -23.6596,
+    val longitude: Double = -46.7681,
     val aiSafetyRecommendation: String,
     val userConfirmed: Boolean = false
 ) {
@@ -255,6 +257,8 @@ class CitizenViewModel : ViewModel() {
             isAnonymous = true,
             mapXFraction = 0.25f,
             mapYFraction = 0.28f,
+            latitude = -23.6593,
+            longitude = -46.7678,
             aiSafetyRecommendation = "Evite caminhar sozinho pelo acesso norte nos próximos 25 min. Utilize a saída principal iluminada junto ao terminal de ônibus."
         ),
         // Figma 32:608 - Card 2
@@ -276,6 +280,8 @@ class CitizenViewModel : ViewModel() {
             isAnonymous = false,
             mapXFraction = 0.66f,
             mapYFraction = 0.36f,
+            latitude = -23.6625,
+            longitude = -46.7621,
             aiSafetyRecommendation = "Fumaça densa na Rua Cassiano dos Santos. Mantenha janelas fechadas num raio de 300m e dê passagem aos veículos de emergência."
         ),
         // Figma 32:608 - Card 3
@@ -297,6 +303,8 @@ class CitizenViewModel : ViewModel() {
             isAnonymous = true,
             mapXFraction = 0.32f,
             mapYFraction = 0.64f,
+            latitude = -23.6648,
+            longitude = -46.7695,
             aiSafetyRecommendation = "Rota alternativa recomendada: desvie pela Av. Ellis Maas ou utilize a Linha 5-Lilás do Metrô."
         ),
         // Figma 32:608 - Card 4
@@ -318,6 +326,8 @@ class CitizenViewModel : ViewModel() {
             isAnonymous = false,
             mapXFraction = 0.76f,
             mapYFraction = 0.72f,
+            latitude = -23.6682,
+            longitude = -46.7740,
             aiSafetyRecommendation = "Evite estacionar sob árvores ou próximo a fiações elétricas. Abrigue-se em local seguro."
         ),
         // Figma 32:608 - Card 5
@@ -339,6 +349,8 @@ class CitizenViewModel : ViewModel() {
             isAnonymous = true,
             mapXFraction = 0.50f,
             mapYFraction = 0.48f,
+            latitude = -23.6660,
+            longitude = -46.7650,
             aiSafetyRecommendation = "Lentidão de 900m no sentido Bairro. Prefira a faixa da esquerda ou vias paralelas."
         ),
         // Figma 32:608 - Card 6
@@ -361,6 +373,8 @@ class CitizenViewModel : ViewModel() {
             isAnonymous = false,
             mapXFraction = 0.82f,
             mapYFraction = 0.25f,
+            latitude = -23.6634,
+            longitude = -46.7731,
             aiSafetyRecommendation = "Corredor seguro ativo no entorno do Parque Santo Dias com policiamento ostensivo reforçado."
         ),
         // Av. Paulista / Pinheiros extra incidents so switching neighborhood is realistic
@@ -383,6 +397,8 @@ class CitizenViewModel : ViewModel() {
             isAnonymous = true,
             mapXFraction = 0.42f,
             mapYFraction = 0.35f,
+            latitude = -23.5614,
+            longitude = -46.6559,
             aiSafetyRecommendation = "Não utilize o celular próximo ao meio-fio aguardando o semáforo abrir."
         ),
         IncidentAlert(
@@ -404,6 +420,8 @@ class CitizenViewModel : ViewModel() {
             isAnonymous = true,
             mapXFraction = 0.58f,
             mapYFraction = 0.52f,
+            latitude = -23.5642,
+            longitude = -46.6894,
             aiSafetyRecommendation = "Prefira caminhar pela calçada oposta em frente aos comércios abertos."
         )
     )
