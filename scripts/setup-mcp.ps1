@@ -1,17 +1,16 @@
-# Registra o MCP do Figma (e opcionalmente do GitHub) no Codex.
-# Pré-requisitos:
-#   - App desktop do Figma aberto, com o servidor MCP do Dev Mode habilitado
-#   - (opcional) variável de usuário GITHUB_PAT definida
-# A sintaxe do `codex mcp add` pode variar por versão: confirme com `codex mcp add --help`.
+# Registra o MCP remoto do Figma no Codex (recomendado pela documentação do Figma).
+# Fonte: https://developers.figma.com/docs/figma-mcp-server/remote-server-installation/
+# Não precisa do app desktop: a autenticação é por OAuth na sua conta Figma.
 
-# Figma (servidor local do Dev Mode)
-codex mcp add figma --url http://127.0.0.1:3845/mcp
+codex mcp add figma --url https://mcp.figma.com/mcp
+codex mcp login figma   # abre o navegador: clique em "Allow access"
 
-# GitHub (opcional): lê o token da variável de ambiente, nunca de arquivo versionado
+# GitHub (opcional): o 'gh' já cobre repositórios e PRs.
+# Se quiser o MCP, defina a variável de usuário GITHUB_PAT antes (nunca coloque o token em arquivo versionado).
 if ($env:GITHUB_PAT) {
   codex mcp add github --url https://api.githubcopilot.com/mcp/ --bearer-token-env-var GITHUB_PAT
 } else {
-  Write-Warning "GITHUB_PAT não definido: pulando o MCP do GitHub (o 'gh' já cobre repositórios e PRs)."
+  Write-Warning "GITHUB_PAT não definido: pulando o MCP do GitHub."
 }
 
 codex mcp list
