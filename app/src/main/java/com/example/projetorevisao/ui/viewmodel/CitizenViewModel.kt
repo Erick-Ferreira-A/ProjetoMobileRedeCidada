@@ -219,8 +219,10 @@ class CitizenViewModel : ViewModel() {
     )
         private set
 
-    val districtTelemetry: SspDistrictTelemetry
-        get() = SpPublicSafetyApiService.getDistrictTelemetry(selectedNeighborhood)
+    var districtTelemetry by mutableStateOf(
+        SpPublicSafetyApiService.getDistrictTelemetry(selectedNeighborhood)
+    )
+        private set
 
     val integratedApis: List<ExternalApiConnectionStatus> =
         SpPublicSafetyApiService.getIntegratedApisCatalog()
@@ -232,7 +234,10 @@ class CitizenViewModel : ViewModel() {
     fun refreshPublicApis() {
         viewModelScope.launch {
             isRefreshingApis = true
+            districtTelemetry = SpPublicSafetyApiService.getDistrictTelemetry(selectedNeighborhood)
             weatherTelemetry = SpPublicSafetyApiService.fetchLiveWeatherSafety(selectedNeighborhood)
+            districtTelemetry = SpPublicSafetyApiService.fetchLiveSspAndSmartSampaTelemetry(selectedNeighborhood)
+            metroLines = SpPublicSafetyApiService.fetchLiveMetroSpStatus(metroLines)
             isRefreshingApis = false
         }
     }
@@ -539,56 +544,59 @@ class CitizenViewModel : ViewModel() {
     val safetyReels: List<SafetyReel>
         get() = _safetyReels
 
-    val metroLines = listOf(
-        MetroLineStatus(
-            code = "L5",
-            name = "Linha 5 - Lilás (Capão Redondo ↔ Chácara Klabin)",
-            operator = "ViaMobilidade",
-            lineColor = Color(0xFF9B3894),
-            operationalStatus = "Operação Normal",
-            isNormal = true,
-            crowdLevel = "Moderada",
-            headWayMinutes = 3,
-            safetyNote = "Acesso Sul da Estação Capão Redondo com patrulhamento reforçado. Evite o acesso Norte devido a relato recente a 500m.",
-            activeSecurityAgents = 18
-        ),
-        MetroLineStatus(
-            code = "L9",
-            name = "Linha 9 - Esmeralda (Osasco ↔ Mendes-Vila Natal)",
-            operator = "ViaMobilidade",
-            lineColor = Color(0xFF00A88E),
-            operationalStatus = "Operação Normal",
-            isNormal = true,
-            crowdLevel = "Moderada",
-            headWayMinutes = 4,
-            safetyNote = "Integração Santo Amaro com iluminação 100% ativa e câmeras Smart Sampa integradas.",
-            activeSecurityAgents = 22
-        ),
-        MetroLineStatus(
-            code = "L4",
-            name = "Linha 4 - Amarela (Luz ↔ Vila Sônia)",
-            operator = "ViaQuatro",
-            lineColor = Color(0xFFF59E0B),
-            operationalStatus = "Operação Normal",
-            isNormal = true,
-            crowdLevel = "Baixa",
-            headWayMinutes = 2,
-            safetyNote = "Corredor seguro ativo nas saídas Pinheiros e Paulista.",
-            activeSecurityAgents = 26
-        ),
-        MetroLineStatus(
-            code = "L1",
-            name = "Linha 1 - Azul (Jabaquara ↔ Tucuruvi)",
-            operator = "Metrô SP",
-            lineColor = Color(0xFF0053A0),
-            operationalStatus = "Velocidade Reduzida (Chuva)",
-            isNormal = false,
-            crowdLevel = "Alta",
-            headWayMinutes = 5,
-            safetyNote = "Velocidade reduzida entre Santa Cruz e Jabaquara devido à chuva forte na Zona Sul.",
-            activeSecurityAgents = 30
+    var metroLines by mutableStateOf(
+        listOf(
+            MetroLineStatus(
+                code = "L5",
+                name = "Linha 5 - Lilás (Capão Redondo ↔ Chácara Klabin)",
+                operator = "ViaMobilidade",
+                lineColor = Color(0xFF9B3894),
+                operationalStatus = "Operação Normal",
+                isNormal = true,
+                crowdLevel = "Moderada",
+                headWayMinutes = 3,
+                safetyNote = "Acesso Sul da Estação Capão Redondo com patrulhamento reforçado. Evite o acesso Norte devido a relato recente a 500m.",
+                activeSecurityAgents = 18
+            ),
+            MetroLineStatus(
+                code = "L9",
+                name = "Linha 9 - Esmeralda (Osasco ↔ Mendes-Vila Natal)",
+                operator = "ViaMobilidade",
+                lineColor = Color(0xFF00A88E),
+                operationalStatus = "Operação Normal",
+                isNormal = true,
+                crowdLevel = "Moderada",
+                headWayMinutes = 4,
+                safetyNote = "Integração Santo Amaro com iluminação 100% ativa e câmeras Smart Sampa integradas.",
+                activeSecurityAgents = 22
+            ),
+            MetroLineStatus(
+                code = "L4",
+                name = "Linha 4 - Amarela (Luz ↔ Vila Sônia)",
+                operator = "ViaQuatro",
+                lineColor = Color(0xFFF59E0B),
+                operationalStatus = "Operação Normal",
+                isNormal = true,
+                crowdLevel = "Baixa",
+                headWayMinutes = 2,
+                safetyNote = "Corredor seguro ativo nas saídas Pinheiros e Paulista.",
+                activeSecurityAgents = 26
+            ),
+            MetroLineStatus(
+                code = "L1",
+                name = "Linha 1 - Azul (Jabaquara ↔ Tucuruvi)",
+                operator = "Metrô SP",
+                lineColor = Color(0xFF0053A0),
+                operationalStatus = "Velocidade Reduzida (Chuva)",
+                isNormal = false,
+                crowdLevel = "Alta",
+                headWayMinutes = 5,
+                safetyNote = "Velocidade reduzida entre Santa Cruz e Jabaquara devido à chuva forte na Zona Sul.",
+                activeSecurityAgents = 30
+            )
         )
     )
+        private set
 
     val safeRoutes = listOf(
         SafePedestrianRoute(
