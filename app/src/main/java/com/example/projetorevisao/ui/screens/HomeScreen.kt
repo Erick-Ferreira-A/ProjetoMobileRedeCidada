@@ -2,12 +2,10 @@ package com.example.projetorevisao.ui.screens
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,14 +13,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -33,36 +29,33 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.projetorevisao.data.remote.SspDistrictTelemetry
 import com.example.projetorevisao.data.remote.WeatherSafetyTelemetry
+import com.example.projetorevisao.ui.components.CitizenAppTopBar
+import com.example.projetorevisao.ui.components.CitizenBottomNavBar
 import com.example.projetorevisao.ui.components.CitizenIcons
 import com.example.projetorevisao.ui.components.CitizenInteractiveMapContainer
-import com.example.projetorevisao.ui.components.RedeCidadaLogo
 import com.example.projetorevisao.ui.theme.BrandBlue
 import com.example.projetorevisao.ui.theme.BrandBlueHero
-import com.example.projetorevisao.ui.theme.BrandNavyDark
 import com.example.projetorevisao.ui.theme.BrandOrange
 import com.example.projetorevisao.ui.theme.CitizenSPTheme
 import com.example.projetorevisao.ui.theme.CitizenStatusColors
@@ -71,7 +64,6 @@ import com.example.projetorevisao.ui.viewmodel.IncidentAlert
 import com.example.projetorevisao.ui.viewmodel.IncidentCategory
 import com.example.projetorevisao.ui.viewmodel.IncidentStatus
 import com.example.projetorevisao.ui.viewmodel.rememberCitizenViewModel
-import kotlin.math.roundToInt
 
 @Composable
 fun CitizenHomeScreen(
@@ -81,128 +73,132 @@ fun CitizenHomeScreen(
     onOpenProfile: () -> Unit = {}
 ) {
     val selectedIncident = viewModel.selectedIncidentForDetail
+    var showSearchField by rememberSaveable { mutableStateOf(false) }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Top App Bar + Segmented Tabs (Figma 32:608 & 32:634)
-        HomeTopHeaderAndTabs(
-            activeTab = viewModel.activeHomeTab,
-            onSelectTab = { viewModel.setHomeTab(it) },
-            onSosClick = onSosClick,
-            onOpenProfile = onOpenProfile
-        )
-
-        if (viewModel.activeHomeTab == "reels") {
-            CitizenReelsScreen(
-                viewModel = viewModel,
-                onOpenReportSheet = onOpenReportSheet
+        // Neighborhood Selector Chips + Quick Search Toggle
+        item {
+            NeighborhoodSelectorRow(
+                neighborhoods = viewModel.availableNeighborhoods,
+                selected = viewModel.selectedNeighborhood,
+                showSearch = showSearchField,
+                onToggleSearch = { showSearchField = !showSearchField },
+                onSelect = { viewModel.selectNeighborhood(it) }
             )
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+        }
+
+        if (showSearchField) {
+            item {
+                OutlinedTextField(
+                    value = viewModel.searchQuery,
+                    onValueChange = { viewModel.updateSearchQuery(it) },
+                    placeholder = { Text("Buscar rua, estação de metrô ou tipo de alerta...") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = CitizenIcons.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        // Interactive Map View Card (Figma 32:781)
+        item {
+            InteractiveIncidentMapCard(
+                neighborhood = viewModel.selectedNeighborhood,
+                incidents = viewModel.incidents,
+                showHeatmap = viewModel.showHeatmapOverlay,
+                smartSampaCameras = viewModel.districtTelemetry.smartSampaCamerasActive,
+                onToggleHeatmap = { viewModel.toggleHeatmap() },
+                onPinClick = { viewModel.openIncidentDetail(it) },
+                onReportClick = onOpenReportSheet
+            )
+        }
+
+        // Compact Live Weather (Open-Meteo/INMET/CGE-SP) & SSP-SP Smart Sampa Banner (No text wrapping!)
+        item {
+            PublicSafetyApisLiveBanner(
+                weather = viewModel.weatherTelemetry,
+                district = viewModel.districtTelemetry,
+                isRefreshing = viewModel.isRefreshingApis,
+                onRefresh = { viewModel.refreshPublicApis() }
+            )
+        }
+
+        // Category Filter Chips Row
+        item {
+            CategoryFilterChipsRow(
+                selectedCategory = viewModel.selectedCategoryFilter,
+                onSelectCategory = { viewModel.selectCategoryFilter(it) }
+            )
+        }
+
+        // Section Title "Alertas Recentes" + Quick "+ Reportar" CTA (Figma 32:656)
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Neighborhood Switcher Pills
-                item {
-                    NeighborhoodSelectorRow(
-                        neighborhoods = viewModel.availableNeighborhoods,
-                        selected = viewModel.selectedNeighborhood,
-                        onSelect = { viewModel.selectNeighborhood(it) }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Alertas Recentes",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        text = "${viewModel.incidents.size} ocorrências verificadas na sua região",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                // Interactive Map View Card (Figma 32:781)
-                item {
-                    InteractiveIncidentMapCard(
-                        neighborhood = viewModel.selectedNeighborhood,
-                        incidents = viewModel.incidents,
-                        showHeatmap = viewModel.showHeatmapOverlay,
-                        smartSampaCameras = viewModel.districtTelemetry.smartSampaCamerasActive,
-                        onToggleHeatmap = { viewModel.toggleHeatmap() },
-                        onPinClick = { viewModel.openIncidentDetail(it) },
-                        onReportClick = onOpenReportSheet
-                    )
-                }
-
-                // Live Weather (Open-Meteo/INMET/CGE-SP) & SSP-SP Smart Sampa API Card
-                item {
-                    PublicSafetyApisLiveBanner(
-                        weather = viewModel.weatherTelemetry,
-                        district = viewModel.districtTelemetry,
-                        isRefreshing = viewModel.isRefreshingApis,
-                        onRefresh = { viewModel.refreshPublicApis() }
-                    )
-                }
-
-                // Search & Category Filters
-                item {
-                    SearchAndCategoryFilterSection(
-                        searchQuery = viewModel.searchQuery,
-                        onSearchChange = { viewModel.updateSearchQuery(it) },
-                        selectedCategory = viewModel.selectedCategoryFilter,
-                        onSelectCategory = { viewModel.selectCategoryFilter(it) }
-                    )
-                }
-
-                // Section Title "Alertas Recentes" (Figma 32:656)
-                item {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = BrandOrange,
+                    modifier = Modifier.clickable(onClick = onOpenReportSheet)
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
-                            Text(
-                                text = "Alertas Recentes",
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                            Text(
-                                text = "${viewModel.incidents.size} ocorrências monitoradas • Toque para detalhes e rota segura",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = CitizenStatusColors.verifiedBadgeBg
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = CitizenIcons.Shield,
-                                    contentDescription = null,
-                                    tint = CitizenStatusColors.safe,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Score ${viewModel.userTrustScore}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = CitizenStatusColors.safe,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
+                        Icon(
+                            imageVector = CitizenIcons.Add,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Reportar",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
-
-                // Incident Alert Cards (Figma 32:658)
-                items(viewModel.incidents, key = { it.id }) { incident ->
-                    FigmaIncidentAlertCard(
-                        incident = incident,
-                        onCardClick = { viewModel.openIncidentDetail(incident) },
-                        onConfirmClick = { viewModel.confirmIncident(incident.id) }
-                    )
-                }
             }
+        }
+
+        // Incident Alert Cards (Figma 32:658) — now immediately visible above the fold!
+        items(viewModel.incidents, key = { it.id }) { incident ->
+            FigmaIncidentAlertCard(
+                incident = incident,
+                onCardClick = { viewModel.openIncidentDetail(incident) },
+                onConfirmClick = { viewModel.confirmIncident(incident.id) }
+            )
         }
     }
 
@@ -220,192 +216,67 @@ fun CitizenHomeScreen(
 }
 
 @Composable
-private fun HomeTopHeaderAndTabs(
-    activeTab: String,
-    onSelectTab: (String) -> Unit,
-    onSosClick: () -> Unit,
-    onOpenProfile: () -> Unit
-) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RedeCidadaLogo(size = 38.dp)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = "Rede Cidadã",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Text(
-                            text = "São Paulo • SSP-SP, Metrô & CGE Live",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = CitizenStatusColors.critical.copy(alpha = 0.14f),
-                        border = BorderStroke(1.dp, CitizenStatusColors.critical.copy(alpha = 0.4f)),
-                        modifier = Modifier.clickable(onClick = onSosClick)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = CitizenIcons.SosEmergency,
-                                contentDescription = "SOS 190",
-                                tint = CitizenStatusColors.critical,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "190",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = CitizenStatusColors.critical,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
-                    }
-
-                    IconButton(
-                        onClick = onOpenProfile,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    ) {
-                        Icon(
-                            imageVector = CitizenIcons.Person,
-                            contentDescription = "Perfil e APIs Conectadas",
-                            tint = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Segmented Switcher "Feed & Mapa | Reels" (Figma 32:634)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                SegmentedTopTabButton(
-                    selected = activeTab == "feed",
-                    icon = CitizenIcons.Map,
-                    title = "Feed & Mapa",
-                    onClick = { onSelectTab("feed") },
-                    modifier = Modifier.weight(1f)
-                )
-                SegmentedTopTabButton(
-                    selected = activeTab == "reels",
-                    icon = CitizenIcons.Reels,
-                    title = "Reels de Segurança",
-                    onClick = { onSelectTab("reels") },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SegmentedTopTabButton(
-    selected: Boolean,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        shape = RoundedCornerShape(9.dp),
-        color = if (selected) BrandBlue else Color.Transparent,
-        modifier = modifier.clickable(onClick = onClick)
-    ) {
-        Row(
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(17.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelLarge,
-                color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
 private fun NeighborhoodSelectorRow(
     neighborhoods: List<String>,
     selected: String,
+    showSearch: Boolean,
+    onToggleSearch: () -> Unit,
     onSelect: (String) -> Unit
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        neighborhoods.forEach { item ->
-            val isSelected = item == selected
-            FilterChip(
-                selected = isSelected,
-                onClick = { onSelect(item) },
-                label = {
-                    Text(
-                        text = item,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                    )
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = CitizenIcons.LocationPin,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = BrandBlue.copy(alpha = 0.15f),
-                    selectedLabelColor = MaterialTheme.colorScheme.primary,
-                    selectedLeadingIconColor = BrandOrange
+        Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = if (showSearch) BrandBlue else MaterialTheme.colorScheme.surfaceContainerHigh,
+            modifier = Modifier
+                .size(36.dp)
+                .clickable(onClick = onToggleSearch)
+        ) {
+            androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = CitizenIcons.Search,
+                    contentDescription = "Buscar endereço",
+                    tint = if (showSearch) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
                 )
-            )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            neighborhoods.forEach { item ->
+                val isSelected = item == selected
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onSelect(item) },
+                    label = {
+                        Text(
+                            text = item,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            maxLines = 1
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = CitizenIcons.LocationPin,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = BrandBlue.copy(alpha = 0.15f),
+                        selectedLabelColor = MaterialTheme.colorScheme.primary,
+                        selectedLeadingIconColor = BrandOrange
+                    )
+                )
+            }
         }
     }
 }
@@ -430,7 +301,7 @@ private fun InteractiveIncidentMapCard(
         onReportClick = onReportClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(265.dp)
+            .height(210.dp)
     )
 }
 
@@ -449,54 +320,69 @@ private fun PublicSafetyApisLiveBanner(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         border = BorderStroke(1.dp, alertColor.copy(alpha = 0.45f))
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            // Single non-wrapping header row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
                     Icon(
                         imageVector = CitizenIcons.Storm,
                         contentDescription = null,
                         tint = alertColor,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "CLIMA & DEFESA CIVIL SP (${weather.inmetAlertLevel})",
-                        style = MaterialTheme.typography.labelMedium,
+                        text = "CLIMA & DEFESA CIVIL (${weather.inmetAlertLevel})",
+                        style = MaterialTheme.typography.labelSmall,
                         color = alertColor,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                TextButton(
-                    onClick = onRefresh,
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    modifier = Modifier.clickable(onClick = onRefresh)
                 ) {
-                    Icon(
-                        imageVector = CitizenIcons.CloudSync,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (isRefreshing) "Sincronizando..." else "Atualizar (${weather.lastUpdatedTime})",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = CitizenIcons.CloudSync,
+                            contentDescription = "Sincronizar APIs",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (isRefreshing) "Sincronizando" else "API Ao Vivo",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
 
@@ -508,59 +394,12 @@ private fun PublicSafetyApisLiveBanner(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "${String.format("%.1f", weather.temperatureCelsius)}°C • ${weather.conditionLabel}",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        text = weather.cgeFloodRiskLabel,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow
-                ) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        Text(
-                            text = "Chuva: ${weather.precipitationMm}mm",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Rajadas: ${weather.windGustsKmh.toInt()} km/h",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            // SSP-SP Jurisdição Policial Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = CitizenIcons.PoliceShield,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "${district.dpName} • ${district.militaryBattalion}",
                         style = MaterialTheme.typography.labelSmall,
@@ -569,77 +408,67 @@ private fun PublicSafetyApisLiveBanner(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                Text(
-                    text = "${district.securityTotemsCount} Totens SP",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = CitizenStatusColors.safe,
-                    fontWeight = FontWeight.Bold
-                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                ) {
+                    Text(
+                        text = "${weather.precipitationMm}mm • ${weather.windGustsKmh.toInt()}km/h",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        maxLines = 1
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun SearchAndCategoryFilterSection(
-    searchQuery: String,
-    onSearchChange: (String) -> Unit,
+private fun CategoryFilterChipsRow(
     selectedCategory: IncidentCategory?,
     onSelectCategory: (IncidentCategory?) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchChange,
-            placeholder = { Text("Buscar rua, estação de metrô ou tipo de alerta...") },
-            leadingIcon = {
-                Icon(
-                    imageVector = CitizenIcons.Search,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(14.dp),
-            modifier = Modifier.fillMaxWidth()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        FilterChip(
+            selected = selectedCategory == null,
+            onClick = { onSelectCategory(null) },
+            label = { Text("Todos", fontWeight = FontWeight.Bold) }
         )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        IncidentCategory.entries.forEach { category ->
+            val isSelected = selectedCategory == category
             FilterChip(
-                selected = selectedCategory == null,
-                onClick = { onSelectCategory(null) },
-                label = { Text("Todos", fontWeight = FontWeight.Bold) }
-            )
-            IncidentCategory.entries.forEach { category ->
-                val isSelected = selectedCategory == category
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onSelectCategory(category) },
-                    label = {
-                        Text(
-                            text = category.label,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = categoryIcon(category),
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = category.badgeColor.copy(alpha = 0.18f),
-                        selectedLabelColor = category.badgeColor,
-                        selectedLeadingIconColor = category.badgeColor
+                selected = isSelected,
+                onClick = { onSelectCategory(category) },
+                label = {
+                    Text(
+                        text = category.label,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                     )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = categoryIcon(category),
+                        contentDescription = null,
+                        modifier = Modifier.size(15.dp)
+                    )
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = category.badgeColor.copy(alpha = 0.18f),
+                    selectedLabelColor = category.badgeColor,
+                    selectedLeadingIconColor = category.badgeColor
                 )
-            }
+            )
         }
     }
 }
@@ -662,8 +491,8 @@ private fun FigmaIncidentAlertCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Top Badges Row (Figma 32:661 - Category Pill + Green "✓ Verificado" Pill)
             Row(
@@ -672,11 +501,11 @@ private fun FigmaIncidentAlertCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(7.dp),
                         color = incident.category.badgeColor
                     ) {
                         Row(
@@ -687,7 +516,7 @@ private fun FigmaIncidentAlertCard(
                                 imageVector = categoryIcon(incident.category),
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(13.dp)
+                                modifier = Modifier.size(12.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
@@ -701,20 +530,20 @@ private fun FigmaIncidentAlertCard(
 
                     if (incident.verified) {
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(7.dp),
                             color = CitizenStatusColors.verifiedBadgeBg
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = CitizenIcons.VerifiedCheck,
                                     contentDescription = null,
                                     tint = CitizenStatusColors.safe,
-                                    modifier = Modifier.size(13.dp)
+                                    modifier = Modifier.size(12.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
                                 Text(
                                     text = "Verificado",
                                     style = MaterialTheme.typography.labelSmall,
@@ -732,7 +561,7 @@ private fun FigmaIncidentAlertCard(
                             imageVector = CitizenIcons.VisibilityOff,
                             contentDescription = "Relato Anônimo",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(13.dp)
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
@@ -747,14 +576,14 @@ private fun FigmaIncidentAlertCard(
             // Title & Description (Figma 32:670)
             Text(
                 text = incident.title,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.ExtraBold
             )
 
             Text(
                 text = incident.description,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -766,14 +595,16 @@ private fun FigmaIncidentAlertCard(
                     imageVector = CitizenIcons.LocationPin,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(15.dp)
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(5.dp))
                 Text(
                     text = incident.address,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -793,12 +624,12 @@ private fun FigmaIncidentAlertCard(
             ) {
                 Text(
                     text = "${incident.timeAgo}  •  ${incident.distanceLabel}",
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(9.dp),
                     color = if (incident.userConfirmed) {
                         BrandOrange.copy(alpha = 0.16f)
                     } else {
@@ -811,19 +642,19 @@ private fun FigmaIncidentAlertCard(
                     modifier = Modifier.clickable(onClick = onConfirmClick)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = CitizenIcons.ThumbUp,
                             contentDescription = "Confirmar ocorrência",
                             tint = if (incident.userConfirmed) BrandOrange else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(15.dp)
+                            modifier = Modifier.size(14.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = "${incident.confirmations} confirmam",
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelSmall,
                             color = if (incident.userConfirmed) BrandOrange else MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold
                         )
@@ -846,20 +677,19 @@ private fun IncidentStatusFeedbackBar(
     }
 
     Surface(
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(9.dp),
         color = statusColor.copy(alpha = 0.10f),
         border = BorderStroke(1.dp, statusColor.copy(alpha = 0.30f)),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "STATUS: ${status.label.uppercase()}",
                     style = MaterialTheme.typography.labelSmall,
@@ -867,17 +697,26 @@ private fun IncidentStatusFeedbackBar(
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
+                    text = authority,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = statusColor.copy(alpha = 0.16f)
+            ) {
+                Text(
                     text = "Etapa ${status.stepIndex}/3",
                     style = MaterialTheme.typography.labelSmall,
                     color = statusColor,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
-            Text(
-                text = authority,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
@@ -942,7 +781,6 @@ private fun IncidentDetailBottomSheet(
                 authority = incident.authorityAssigned
             )
 
-            // Google Cloud Vertex AI / Gemini Preventive Recommendation
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = CitizenStatusColors.insight.copy(alpha = 0.12f),
@@ -1029,22 +867,49 @@ fun categoryIcon(category: IncidentCategory): androidx.compose.ui.graphics.vecto
     }
 }
 
-@Preview(showBackground = true, name = "Home Screen - Light")
+@Preview(showBackground = true, heightDp = 820, name = "Home Screen - Light")
 @Composable
 fun PreviewCitizenHomeLight() {
     CitizenSPTheme(darkTheme = false) {
-        CitizenHomeScreen()
+        Scaffold(
+            topBar = { CitizenAppTopBar(currentScreen = "home") },
+            bottomBar = {
+                CitizenBottomNavBar(
+                    currentScreen = "home",
+                    onSelectScreen = {},
+                    onOpenReportSheet = {}
+                )
+            }
+        ) { innerPadding ->
+            Surface(modifier = Modifier.padding(innerPadding)) {
+                CitizenHomeScreen()
+            }
+        }
     }
 }
 
 @Preview(
     showBackground = true,
+    heightDp = 820,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     name = "Home Screen - Dark"
 )
 @Composable
 fun PreviewCitizenHomeDark() {
     CitizenSPTheme(darkTheme = true) {
-        CitizenHomeScreen()
+        Scaffold(
+            topBar = { CitizenAppTopBar(currentScreen = "home") },
+            bottomBar = {
+                CitizenBottomNavBar(
+                    currentScreen = "home",
+                    onSelectScreen = {},
+                    onOpenReportSheet = {}
+                )
+            }
+        ) { innerPadding ->
+            Surface(modifier = Modifier.padding(innerPadding)) {
+                CitizenHomeScreen()
+            }
+        }
     }
 }

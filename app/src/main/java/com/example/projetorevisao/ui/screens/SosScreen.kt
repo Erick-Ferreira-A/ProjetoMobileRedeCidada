@@ -25,8 +25,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +43,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.projetorevisao.ui.components.CitizenAppTopBar
+import com.example.projetorevisao.ui.components.CitizenBottomNavBar
 import com.example.projetorevisao.ui.components.CitizenIcons
 import com.example.projetorevisao.ui.theme.BrandBlue
 import com.example.projetorevisao.ui.theme.BrandOrange
@@ -72,7 +74,7 @@ fun CitizenSosScreen(
         EmergencyChannel(
             number = "190",
             title = "Polícia Militar (COPOM SP)",
-            subtitle = "Emergência policial, roubo em andamento ou risco à vida",
+            subtitle = "Emergência policial, assalto em andamento ou risco à vida",
             color = CitizenStatusColors.critical,
             icon = CitizenIcons.PoliceShield
         ),
@@ -86,14 +88,14 @@ fun CitizenSosScreen(
         EmergencyChannel(
             number = "199",
             title = "Defesa Civil & Alagamentos",
-            subtitle = "Risco de desabamento, enchentes severas e tempestades",
+            subtitle = "Enchentes severas, risco de desabamento e tempestades",
             color = BrandBlue,
             icon = CitizenIcons.FloodWater
         ),
         EmergencyChannel(
             number = "192",
-            title = "SAMU Atendimento Médico",
-            subtitle = "Socorro médico de urgência em vias públicas ou residências",
+            title = "SAMU Socorro Médico",
+            subtitle = "Atendimento médico de urgência em vias públicas",
             color = CitizenStatusColors.safe,
             icon = CitizenIcons.SosEmergency
         )
@@ -103,42 +105,14 @@ fun CitizenSosScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = CitizenIcons.ArrowBack,
-                        contentDescription = "Voltar",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-                Column {
-                    Text(
-                        text = "Central SOS & Guardiões",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        text = "Acionamento rápido 190/193/199 com geolocalização criptografada",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-
         // Main SOS Panic & Guardian Card
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = if (sosActive) {
                         CitizenStatusColors.critical.copy(alpha = 0.14f)
@@ -154,13 +128,13 @@ fun CitizenSosScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
+                        .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(92.dp)
+                            .size(72.dp)
                             .clip(CircleShape)
                             .background(
                                 if (sosActive) CitizenStatusColors.critical else CitizenStatusColors.critical.copy(alpha = 0.15f)
@@ -172,17 +146,17 @@ fun CitizenSosScreen(
                             imageVector = CitizenIcons.SosEmergency,
                             contentDescription = "Botão SOS",
                             tint = if (sosActive) Color.White else CitizenStatusColors.critical,
-                            modifier = Modifier.size(44.dp)
+                            modifier = Modifier.size(36.dp)
                         )
                     }
 
                     Text(
                         text = if (sosActive) {
-                            "ALERTA SOS ATIVO • TRANSMITINDO GPS"
+                            "ALERTA SOS ATIVO • NOTIFICANDO PARENTES"
                         } else {
-                            "Toque para Acionar Alerta SOS"
+                            "Acionamento Rápido SOS & Guardiões"
                         },
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = if (sosActive) CitizenStatusColors.critical else MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.ExtraBold,
                         textAlign = TextAlign.Center
@@ -190,9 +164,9 @@ fun CitizenSosScreen(
 
                     Text(
                         text = if (sosActive) {
-                            "Seus 3 Guardiões e o canal de emergência receberam sua posição exata em ${viewModel.selectedNeighborhood}."
+                            "Seus familiares guardiões e o canal de emergência receberam sua localização ao vivo em ${viewModel.selectedNeighborhood}."
                         } else {
-                            "Envia imediatamente sua coordenada GPS, nível de bateria e áudio ambiente criptografado para seus Guardiões."
+                            "Envia imediatamente sua coordenada GPS em tempo real e nível de bateria para seus parentes cadastrados e autoridades."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -242,7 +216,7 @@ fun CitizenSosScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (silentMode) "SOS Silencioso" else "Com Sirene",
+                                    text = if (silentMode) "Modo Silencioso" else "Com Sirene",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = if (silentMode) CitizenStatusColors.safe else MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold
@@ -254,14 +228,27 @@ fun CitizenSosScreen(
             }
         }
 
-        // Trusted Guardians Section (WalkSafe+ / Citizen Protect)
+        // Trusted Guardians Section (Parentes & Familiares Notificados)
         item {
-            Text(
-                text = "Rede de Guardiões (Acompanhamento Ao Vivo)",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Parentes & Rede de Guardiões",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        text = "Familiares notificados automaticamente caso você esteja em perigo",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
 
         items(viewModel.guardians, key = { it.id }) { guardian ->
@@ -270,12 +257,12 @@ fun CitizenSosScreen(
 
         // Official SP Emergency Channels
         item {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "Canais Oficiais de Emergência SP",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.ExtraBold
             )
         }
 
@@ -298,7 +285,7 @@ private fun GuardianContactCard(guardian: GuardianContact) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -308,7 +295,7 @@ private fun GuardianContactCard(guardian: GuardianContact) {
             ) {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
                         .background(BrandBlue.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center
@@ -317,20 +304,20 @@ private fun GuardianContactCard(guardian: GuardianContact) {
                         imageVector = CitizenIcons.Groups,
                         contentDescription = null,
                         tint = BrandBlue,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
                         text = guardian.name,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "${guardian.relation} • ${guardian.distanceLabel}",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -344,13 +331,24 @@ private fun GuardianContactCard(guardian: GuardianContact) {
                     MaterialTheme.colorScheme.surfaceContainerLow
                 }
             ) {
-                Text(
-                    text = if (guardian.isSharingLiveLocation) "GPS Ativo" else "Pronto",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (guardian.isSharingLiveLocation) CitizenStatusColors.safe else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = CitizenIcons.VerifiedCheck,
+                        contentDescription = null,
+                        tint = if (guardian.isSharingLiveLocation) CitizenStatusColors.safe else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (guardian.isSharingLiveLocation) "GPS Ativo" else "Pronto",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (guardian.isSharingLiveLocation) CitizenStatusColors.safe else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -360,7 +358,7 @@ private fun GuardianContactCard(guardian: GuardianContact) {
 private fun EmergencyChannelCard(channel: EmergencyChannel) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -369,7 +367,7 @@ private fun EmergencyChannelCard(channel: EmergencyChannel) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -379,7 +377,7 @@ private fun EmergencyChannelCard(channel: EmergencyChannel) {
             ) {
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
+                        .size(42.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(channel.color.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
@@ -388,20 +386,20 @@ private fun EmergencyChannelCard(channel: EmergencyChannel) {
                         imageVector = channel.icon,
                         contentDescription = null,
                         tint = channel.color,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
                         text = "${channel.number} • ${channel.title}",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = channel.subtitle,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -414,14 +412,14 @@ private fun EmergencyChannelCard(channel: EmergencyChannel) {
                 color = channel.color
             ) {
                 Box(
-                    modifier = Modifier.size(38.dp),
+                    modifier = Modifier.size(36.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = CitizenIcons.PhoneCall,
                         contentDescription = "Ligar ${channel.number}",
                         tint = Color.White,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(17.dp)
                     )
                 }
             }
@@ -429,22 +427,49 @@ private fun EmergencyChannelCard(channel: EmergencyChannel) {
     }
 }
 
-@Preview(showBackground = true, name = "SOS Screen - Light")
+@Preview(showBackground = true, heightDp = 820, name = "SOS Screen - Light")
 @Composable
 fun PreviewCitizenSosLight() {
     CitizenSPTheme(darkTheme = false) {
-        CitizenSosScreen()
+        Scaffold(
+            topBar = { CitizenAppTopBar(currentScreen = "sos") },
+            bottomBar = {
+                CitizenBottomNavBar(
+                    currentScreen = "sos",
+                    onSelectScreen = {},
+                    onOpenReportSheet = {}
+                )
+            }
+        ) { innerPadding ->
+            Surface(modifier = Modifier.padding(innerPadding)) {
+                CitizenSosScreen()
+            }
+        }
     }
 }
 
 @Preview(
     showBackground = true,
+    heightDp = 820,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     name = "SOS Screen - Dark"
 )
 @Composable
 fun PreviewCitizenSosDark() {
     CitizenSPTheme(darkTheme = true) {
-        CitizenSosScreen()
+        Scaffold(
+            topBar = { CitizenAppTopBar(currentScreen = "sos") },
+            bottomBar = {
+                CitizenBottomNavBar(
+                    currentScreen = "sos",
+                    onSelectScreen = {},
+                    onOpenReportSheet = {}
+                )
+            }
+        ) { innerPadding ->
+            Surface(modifier = Modifier.padding(innerPadding)) {
+                CitizenSosScreen()
+            }
+        }
     }
 }

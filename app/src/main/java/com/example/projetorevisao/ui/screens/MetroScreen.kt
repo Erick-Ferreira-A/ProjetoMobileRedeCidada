@@ -25,6 +25,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +40,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.projetorevisao.ui.components.CitizenAppTopBar
+import com.example.projetorevisao.ui.components.CitizenBottomNavBar
 import com.example.projetorevisao.ui.components.CitizenIcons
 import com.example.projetorevisao.ui.theme.BrandBlue
 import com.example.projetorevisao.ui.theme.BrandOrange
@@ -59,12 +62,12 @@ fun CitizenMetroScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Header with API status
+        // Safe Route Planner Section (Addressing Figma UX Slide 5 & WalkSafe+)
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -72,68 +75,43 @@ fun CitizenMetroScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = CitizenIcons.Train,
+                            imageVector = CitizenIcons.RouteSafe,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(26.dp)
+                            tint = BrandOrange,
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Metrô SP & Rotas Seguras",
-                            style = MaterialTheme.typography.headlineMedium,
+                            text = "Rota Mais Segura vs. Mais Curta",
+                            style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.ExtraBold
                         )
                     }
+
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = CitizenStatusColors.verifiedBadgeBg
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = CitizenIcons.CloudSync,
                                 contentDescription = null,
                                 tint = CitizenStatusColors.safe,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(13.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Direto dos Trens API",
+                                text = "Google Routes IA",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = CitizenStatusColors.safe,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
-                }
-                Text(
-                    text = "Integração em tempo real com Metrô/ViaMobilidade, SPTrans Olho Vivo e Google Maps Safe Routing.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        // Safe Route Planner Section (Addressing Figma UX Slide 5 & WalkSafe+)
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = CitizenIcons.RouteSafe,
-                        contentDescription = null,
-                        tint = BrandOrange,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Comparador: Rota Mais Segura vs. Mais Curta",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold
-                    )
                 }
 
                 viewModel.safeRoutes.forEach { route ->
@@ -148,13 +126,25 @@ fun CitizenMetroScreen(
 
         // Live Metro & CPTM Lines Section
         item {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Status das Linhas (Metrô SP & ViaMobilidade)",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold
-            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Status das Linhas (Metrô SP & ViaMobilidade)",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    text = "Direto dos Trens",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
         items(viewModel.metroLines, key = { it.code }) { line ->
@@ -185,8 +175,8 @@ private fun SafePedestrianRouteCard(
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -205,7 +195,7 @@ private fun SafePedestrianRouteCard(
                             imageVector = if (route.isRecommendedSafe) CitizenIcons.VerifiedCheck else CitizenIcons.WarningTriangle,
                             contentDescription = null,
                             tint = accentColor,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(13.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
@@ -223,7 +213,7 @@ private fun SafePedestrianRouteCard(
 
                 Text(
                     text = "${route.durationMinutes} min (${route.distanceKm})",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -231,14 +221,14 @@ private fun SafePedestrianRouteCard(
 
             Text(
                 text = route.title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
                 text = "${route.origin} ➔ ${route.destination}",
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold
             )
@@ -292,8 +282,8 @@ private fun MetroLineStatusCard(line: MetroLineStatus) {
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -306,7 +296,7 @@ private fun MetroLineStatusCard(line: MetroLineStatus) {
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(36.dp)
                             .clip(CircleShape)
                             .background(line.lineColor),
                         contentAlignment = Alignment.Center
@@ -318,11 +308,11 @@ private fun MetroLineStatusCard(line: MetroLineStatus) {
                             fontWeight = FontWeight.ExtraBold
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
                             text = line.name,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold
                         )
@@ -333,6 +323,8 @@ private fun MetroLineStatusCard(line: MetroLineStatus) {
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(6.dp))
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
@@ -361,7 +353,7 @@ private fun MetroLineStatusCard(line: MetroLineStatus) {
                         imageVector = CitizenIcons.Shield,
                         contentDescription = null,
                         tint = BrandBlue,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f)) {
@@ -371,7 +363,7 @@ private fun MetroLineStatusCard(line: MetroLineStatus) {
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "${line.activeSecurityAgents} agentes de segurança monitorando acessos",
+                            text = "${line.activeSecurityAgents} agentes monitorando acessos",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
@@ -383,22 +375,49 @@ private fun MetroLineStatusCard(line: MetroLineStatus) {
     }
 }
 
-@Preview(showBackground = true, name = "Metro Screen - Light")
+@Preview(showBackground = true, heightDp = 820, name = "Metro Screen - Light")
 @Composable
 fun PreviewCitizenMetroLight() {
     CitizenSPTheme(darkTheme = false) {
-        CitizenMetroScreen()
+        Scaffold(
+            topBar = { CitizenAppTopBar(currentScreen = "metro") },
+            bottomBar = {
+                CitizenBottomNavBar(
+                    currentScreen = "metro",
+                    onSelectScreen = {},
+                    onOpenReportSheet = {}
+                )
+            }
+        ) { innerPadding ->
+            Surface(modifier = Modifier.padding(innerPadding)) {
+                CitizenMetroScreen()
+            }
+        }
     }
 }
 
 @Preview(
     showBackground = true,
+    heightDp = 820,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     name = "Metro Screen - Dark"
 )
 @Composable
 fun PreviewCitizenMetroDark() {
     CitizenSPTheme(darkTheme = true) {
-        CitizenMetroScreen()
+        Scaffold(
+            topBar = { CitizenAppTopBar(currentScreen = "metro") },
+            bottomBar = {
+                CitizenBottomNavBar(
+                    currentScreen = "metro",
+                    onSelectScreen = {},
+                    onOpenReportSheet = {}
+                )
+            }
+        ) { innerPadding ->
+            Surface(modifier = Modifier.padding(innerPadding)) {
+                CitizenMetroScreen()
+            }
+        }
     }
 }

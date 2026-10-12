@@ -40,7 +40,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -106,8 +110,15 @@ fun CitizenInteractiveMapContainer(
     val hasGoogleMapsKey = BuildConfig.MAPS_API_KEY.isNotBlank() &&
         BuildConfig.MAPS_API_KEY != "YOUR_MAPS_API_KEY"
 
-    // Allows switching between Google Maps SDK / Live Street Tiles / Vector Radar
-    var useLiveWebTilesWhenNoKey by remember { mutableStateOf(true) }
+    var preferCartographicCanvas by remember { mutableStateOf(false) }
+
+    // Filter pins for the active neighborhood so pins are clean and well-spaced
+    val mapIncidents = remember(incidents, neighborhood) {
+        val regional = incidents.filter {
+            it.neighborhood.equals(neighborhood, ignoreCase = true)
+        }
+        regional.ifEmpty { incidents.take(5) }
+    }
 
     Card(
         modifier = modifier,
@@ -117,67 +128,58 @@ fun CitizenInteractiveMapContainer(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             when {
-                !isPreview && hasGoogleMapsKey -> {
+                !isPreview && hasGoogleMapsKey && !preferCartographicCanvas -> {
                     NativeGoogleMapsSdkView(
                         neighborhood = neighborhood,
-                        incidents = incidents,
+                        incidents = mapIncidents,
                         showHeatmap = showHeatmap,
                         onPinClick = onPinClick
                     )
                 }
-                !isPreview && useLiveWebTilesWhenNoKey -> {
+                !isPreview && !preferCartographicCanvas -> {
                     LiveCartographicWebMapView(
                         neighborhood = neighborhood,
-                        incidents = incidents,
+                        incidents = mapIncidents,
                         showHeatmap = showHeatmap
                     )
-                    // Overlay clickable pins so tapping opens the native Compose bottom sheet
                     ClickablePinsOverlay(
-                        incidents = incidents,
+                        incidents = mapIncidents,
                         onPinClick = onPinClick
                     )
                 }
                 else -> {
                     DetailedCartographicCanvasMap(
                         neighborhood = neighborhood,
-                        incidents = incidents,
+                        incidents = mapIncidents,
                         showHeatmap = showHeatmap,
                         onPinClick = onPinClick
                     )
                 }
             }
 
-            // Top-left Live Radar & Map Engine Status Badge
+            // Top-left Live Radar & Smart Sampa Badge
             Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color.Black.copy(alpha = 0.68f),
+                shape = RoundedCornerShape(10.dp),
+                color = Color(0xFF0B1528).copy(alpha = 0.86f),
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(12.dp)
-                    .clickable {
-                        if (!hasGoogleMapsKey) {
-                            useLiveWebTilesWhenNoKey = !useLiveWebTilesWhenNoKey
-                        }
-                    }
+                    .padding(10.dp)
+                    .clickable { preferCartographicCanvas = !preferCartographicCanvas }
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
                             .size(8.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF34D399))
+                            .background(Color(0xFF10B981))
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (hasGoogleMapsKey) {
-                            "Google Maps SDK Ativo • $smartSampaCameras câmeras"
-                        } else {
-                            "Mapa SP Ao Vivo • $smartSampaCameras câmeras Smart Sampa"
-                        },
+                        text = "Google Maps SP • $smartSampaCameras câmeras Smart Sampa",
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold
@@ -185,11 +187,11 @@ fun CitizenInteractiveMapContainer(
                 }
             }
 
-            // Right-side Map Controls (Figma 32:824)
+            // Right-side Map Controls (Figma 32:824) — positioned with safe margin from pins
             Column(
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(12.dp),
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Surface(
@@ -197,7 +199,7 @@ fun CitizenInteractiveMapContainer(
                     color = Color.White,
                     shadowElevation = 4.dp,
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(36.dp)
                         .clickable(onClick = onToggleHeatmap)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -205,7 +207,7 @@ fun CitizenInteractiveMapContainer(
                             imageVector = CitizenIcons.Layers,
                             contentDescription = "Alternar Mancha de Calor",
                             tint = if (showHeatmap) BrandOrange else BrandNavyDark,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
                 }
@@ -215,43 +217,43 @@ fun CitizenInteractiveMapContainer(
                     color = Color.White,
                     shadowElevation = 4.dp,
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(36.dp)
                         .clickable(onClick = onReportClick)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = CitizenIcons.Add,
-                            contentDescription = "Adicionar Alerta no Mapa",
+                            imageVector = CitizenIcons.MyLocation,
+                            contentDescription = "Centralizar GPS",
                             tint = BrandBlue,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(19.dp)
                         )
                     }
                 }
             }
 
-            // Bottom Location Pill (Figma 32:838 "Capão Redondo, São Paulo - Zona Sul")
+            // Bottom Location Pill (Figma 32:838)
             Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color.White.copy(alpha = 0.95f),
+                shape = RoundedCornerShape(10.dp),
+                color = Color.White.copy(alpha = 0.96f),
                 shadowElevation = 4.dp,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(12.dp)
+                    .padding(10.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = CitizenIcons.LocationPin,
                         contentDescription = null,
                         tint = BrandBlue,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(15.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Text(
                         text = neighborhood,
-                        style = MaterialTheme.typography.labelLarge,
+                        style = MaterialTheme.typography.labelMedium,
                         color = BrandNavyDark,
                         fontWeight = FontWeight.Bold
                     )
@@ -261,9 +263,6 @@ fun CitizenInteractiveMapContainer(
     }
 }
 
-/**
- * Renderização oficial usando Google Maps SDK for Android (maps-compose) quando MAPS_API_KEY está configurada.
- */
 @Composable
 private fun NativeGoogleMapsSdkView(
     neighborhood: String,
@@ -298,12 +297,11 @@ private fun NativeGoogleMapsSdkView(
             compassEnabled = true
         )
     ) {
-        // Linha 5-Lilás / Corredor Seguro Polyline
         Polyline(
             points = listOf(
-                LatLng(-23.6593, -46.7678), // Estação Capão Redondo
-                LatLng(-23.6490, -46.7580), // Campo Limpo
-                LatLng(-23.6405, -46.7485)  // Vila das Belezas
+                LatLng(-23.6593, -46.7678),
+                LatLng(-23.6490, -46.7580),
+                LatLng(-23.6405, -46.7485)
             ),
             color = Color(0xFF9B3894),
             width = 10f
@@ -336,10 +334,6 @@ private fun NativeGoogleMapsSdkView(
     }
 }
 
-/**
- * Mapa cartográfico real das ruas de São Paulo (Leaflet + CartoDB/OpenStreetMap tiles)
- * que funciona imediatamente no emulador/celular mesmo sem chave de faturamento do Google Cloud.
- */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 private fun LiveCartographicWebMapView(
@@ -352,21 +346,13 @@ private fun LiveCartographicWebMapView(
     val markersJs = incidents.joinToString(separator = "\n") { alert ->
         val hexColor = String.format("#%06X", 0xFFFFFF and alert.category.badgeColor.value.toLong().shr(32).toInt())
         """
-        L.circleMarker([${alert.latitude}, ${alert.longitude}], {
-            radius: 10,
-            fillColor: "$hexColor",
-            color: "#FFFFFF",
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.95
-        }).addTo(map).bindPopup("<b>${alert.title.replace("\"", "'")}</b><br>${alert.address.replace("\"", "'")}");
         if ($showHeatmap) {
             L.circle([${alert.latitude}, ${alert.longitude}], {
-                radius: 260,
+                radius: 240,
                 fillColor: "$hexColor",
                 color: "$hexColor",
                 weight: 1,
-                fillOpacity: 0.22
+                fillOpacity: 0.20
             }).addTo(map);
         }
         """.trimIndent()
@@ -380,7 +366,7 @@ private fun LiveCartographicWebMapView(
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
             <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
             <style>
-                html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; background: #101C33; }
+                html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; background: #14223D; }
                 .leaflet-control-attribution { display: none !important; }
             </style>
         </head>
@@ -414,8 +400,8 @@ private fun LiveCartographicWebMapView(
 }
 
 /**
- * Mapa cartográfico vetorial detalhado para o @Preview do Android Studio e modo offline,
- * exibindo os rótulos reais das avenidas de São Paulo e os pins interativos do Figma (32:781).
+ * Renderização cartográfica estilo Google Maps Urbano para o @Preview e modo offline,
+ * com quarteirões, avenidas arteriais, parque, Linha 5-Lilás e pins sem sobreposição.
  */
 @Composable
 private fun DetailedCartographicCanvasMap(
@@ -426,115 +412,151 @@ private fun DetailedCartographicCanvasMap(
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Canvas(modifier = Modifier.fillMaxSize()) {
+            // Base map land color (Google Maps Dark/Night Urban Palette)
             drawRect(
-                brush = Brush.linearGradient(
+                brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF101C33),
-                        Color(0xFF162747),
-                        Color(0xFF0E182C)
+                        Color(0xFF17263C),
+                        Color(0xFF1D314F),
+                        Color(0xFF152338)
                     )
                 )
             )
 
-            // Green Park Zone (Parque Santo Dias / Parque Trianon)
-            drawRoundRect(
-                color = Color(0xFF10B981).copy(alpha = 0.16f),
-                topLeft = Offset(size.width * 0.66f, size.height * 0.08f),
-                size = Size(size.width * 0.29f, size.height * 0.34f),
-                cornerRadius = CornerRadius(24f, 24f)
-            )
-
-            // Urban blocks & secondary streets
-            val gridColor = Color.White.copy(alpha = 0.09f)
-            for (i in 1..5) {
-                val y = size.height * (i / 6f)
-                drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 2.2f)
-            }
-            for (i in 1..6) {
-                val x = size.width * (i / 7f)
-                drawLine(gridColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 2.2f)
-            }
-
-            // Main Arterial Avenue (Estrada de Itapecerica / Av. Paulista)
-            drawLine(
-                color = Color(0xFF38BDF8).copy(alpha = 0.34f),
-                start = Offset(0f, size.height * 0.72f),
-                end = Offset(size.width, size.height * 0.22f),
-                strokeWidth = 10f
-            )
-
-            // Av. Carlos Caldeira Filho / Rua da Consolação
-            drawLine(
-                color = Color(0xFFF59E0B).copy(alpha = 0.28f),
-                start = Offset(size.width * 0.15f, 0f),
-                end = Offset(size.width * 0.65f, size.height),
-                strokeWidth = 7f
-            )
-
-            // Metro Line 5-Lilás Dashed Track
-            drawLine(
-                color = Color(0xFFC084FC).copy(alpha = 0.65f),
-                start = Offset(size.width * 0.06f, size.height * 0.30f),
-                end = Offset(size.width * 0.94f, size.height * 0.58f),
-                strokeWidth = 5f,
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(16f, 12f), 0f)
-            )
-
-            // Heatmap overlays
-            if (showHeatmap) {
-                incidents.forEach { alert ->
-                    drawCircle(
-                        color = alert.category.badgeColor.copy(alpha = 0.25f),
-                        radius = 70f,
-                        center = Offset(
-                            size.width * alert.mapXFraction,
-                            size.height * alert.mapYFraction
-                        )
+            // Urban city blocks (subtle lighter polygons like Google Maps building footprints)
+            val blockColor = Color(0xFF243B5E).copy(alpha = 0.55f)
+            for (row in 0..3) {
+                for (col in 0..4) {
+                    val left = size.width * (0.04f + col * 0.19f)
+                    val top = size.height * (0.08f + row * 0.23f)
+                    drawRoundRect(
+                        color = blockColor,
+                        topLeft = Offset(left, top),
+                        size = Size(size.width * 0.14f, size.height * 0.16f),
+                        cornerRadius = CornerRadius(10f, 10f)
                     )
                 }
             }
 
-            // User GPS position pulse dot
-            val userCenter = Offset(size.width * 0.46f, size.height * 0.50f)
+            // Green Park Area (Parque Santo Dias / Parque Trianon)
+            drawRoundRect(
+                color = Color(0xFF059669).copy(alpha = 0.32f),
+                topLeft = Offset(size.width * 0.60f, size.height * 0.10f),
+                size = Size(size.width * 0.26f, size.height * 0.30f),
+                cornerRadius = CornerRadius(20f, 20f)
+            )
+
+            // Secondary local streets
+            val localStreetColor = Color(0xFF334E75)
+            for (i in 1..4) {
+                val y = size.height * (i / 5f)
+                drawLine(localStreetColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 5f)
+            }
+            for (i in 1..5) {
+                val x = size.width * (i / 6f)
+                drawLine(localStreetColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 5f)
+            }
+
+            // Arterial Highway 1: Estrada de Itapecerica (Google Maps yellow/amber arterial road)
+            val highwayPath = Path().apply {
+                moveTo(0f, size.height * 0.78f)
+                quadraticTo(
+                    size.width * 0.45f,
+                    size.height * 0.52f,
+                    size.width,
+                    size.height * 0.20f
+                )
+            }
+            drawPath(
+                path = highwayPath,
+                color = Color(0xFF0F172A),
+                style = Stroke(width = 18f, cap = StrokeCap.Round)
+            )
+            drawPath(
+                path = highwayPath,
+                color = Color(0xFFF59E0B).copy(alpha = 0.72f),
+                style = Stroke(width = 11f, cap = StrokeCap.Round)
+            )
+
+            // Arterial Avenue 2: Av. Carlos Caldeira Filho
+            val avenuePath = Path().apply {
+                moveTo(size.width * 0.12f, 0f)
+                lineTo(size.width * 0.58f, size.height)
+            }
+            drawPath(
+                path = avenuePath,
+                color = Color(0xFF0F172A),
+                style = Stroke(width = 14f, cap = StrokeCap.Round)
+            )
+            drawPath(
+                path = avenuePath,
+                color = Color(0xFF38BDF8).copy(alpha = 0.60f),
+                style = Stroke(width = 8f, cap = StrokeCap.Round)
+            )
+
+            // Metro Line 5-Lilás Track
+            drawLine(
+                color = Color(0xFFC084FC),
+                start = Offset(size.width * 0.05f, size.height * 0.34f),
+                end = Offset(size.width * 0.88f, size.height * 0.56f),
+                strokeWidth = 6f,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 10f), 0f)
+            )
+
+            // Heatmap circles when active
+            if (showHeatmap) {
+                incidents.forEach { alert ->
+                    val safeX = alert.mapXFraction.coerceIn(0.16f, 0.76f)
+                    val safeY = alert.mapYFraction.coerceIn(0.24f, 0.70f)
+                    drawCircle(
+                        color = alert.category.badgeColor.copy(alpha = 0.26f),
+                        radius = 58f,
+                        center = Offset(size.width * safeX, size.height * safeY)
+                    )
+                }
+            }
+
+            // User current GPS blue dot
+            val userCenter = Offset(size.width * 0.45f, size.height * 0.48f)
             drawCircle(
                 color = BrandBlueHero.copy(alpha = 0.32f),
-                radius = 28f,
+                radius = 26f,
                 center = userCenter
             )
             drawCircle(
                 color = Color.White,
-                radius = 9f,
+                radius = 8.5f,
                 center = userCenter
             )
             drawCircle(
                 color = BrandBlueHero,
-                radius = 6f,
+                radius = 5.5f,
                 center = userCenter
             )
         }
 
-        // Street & Landmark Labels so the map looks unmistakably like São Paulo in @Preview & screenshots
+        // Clean cartographic street labels (positioned away from controls and pins)
         val isCapao = neighborhood.contains("Capão", ignoreCase = true)
         MapStreetLabel(
-            text = if (isCapao) "Metrô Capão Redondo (L5-Lilás)" else "Metrô Trianon-Masp (L2-Verde)",
+            text = if (isCapao) "Estação Capão Redondo (L5)" else "Estação Trianon-Masp (L2)",
             color = Color(0xFFE9D5FF),
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(start = 16.dp, top = 48.dp)
+                .padding(start = 12.dp, top = 40.dp)
         )
         MapStreetLabel(
             text = if (isCapao) "Pq. Santo Dias" else "Pq. Trianon",
             color = Color(0xFF6EE7B7),
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(end = 62.dp, top = 26.dp)
+                .padding(end = 56.dp, top = 14.dp)
         )
         MapStreetLabel(
             text = if (isCapao) "Est. de Itapecerica" else "Av. Paulista",
-            color = Color(0xFFBAE6FD),
+            color = Color(0xFFFDE68A),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 46.dp)
+                .padding(end = 56.dp, bottom = 12.dp)
         )
 
         ClickablePinsOverlay(
@@ -552,7 +574,7 @@ private fun MapStreetLabel(
 ) {
     Surface(
         shape = RoundedCornerShape(6.dp),
-        color = Color.Black.copy(alpha = 0.48f),
+        color = Color(0xFF0B1528).copy(alpha = 0.72f),
         modifier = modifier
     ) {
         Text(
@@ -570,6 +592,9 @@ private fun ClickablePinsOverlay(
     incidents: List<IncidentAlert>,
     onPinClick: (IncidentAlert) -> Unit
 ) {
+    val density = LocalDensity.current
+    val halfPinPx = with(density) { 16.dp.toPx() }.roundToInt()
+
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -577,8 +602,12 @@ private fun ClickablePinsOverlay(
         val mapHeightPx = constraints.maxHeight
 
         incidents.forEach { alert ->
-            val pinX = (mapWidthPx * alert.mapXFraction).roundToInt() - 36
-            val pinY = (mapHeightPx * alert.mapYFraction).roundToInt() - 36
+            // Coerce fractions into safe interior bounds so pins never touch edge buttons or pills
+            val safeX = alert.mapXFraction.coerceIn(0.16f, 0.76f)
+            val safeY = alert.mapYFraction.coerceIn(0.24f, 0.70f)
+
+            val pinX = (mapWidthPx * safeX).roundToInt() - halfPinPx
+            val pinY = (mapHeightPx * safeY).roundToInt() - halfPinPx
 
             Surface(
                 shape = CircleShape,
@@ -587,7 +616,7 @@ private fun ClickablePinsOverlay(
                 shadowElevation = 6.dp,
                 modifier = Modifier
                     .offset { IntOffset(pinX, pinY) }
-                    .size(34.dp)
+                    .size(32.dp)
                     .clickable { onPinClick(alert) }
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -595,7 +624,7 @@ private fun ClickablePinsOverlay(
                         imageVector = categoryIcon(alert.category),
                         contentDescription = alert.title,
                         tint = Color.White,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }

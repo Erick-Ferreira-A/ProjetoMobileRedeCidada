@@ -31,6 +31,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,6 +46,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.projetorevisao.ui.components.CitizenAppTopBar
+import com.example.projetorevisao.ui.components.CitizenBottomNavBar
 import com.example.projetorevisao.ui.components.CitizenIcons
 import com.example.projetorevisao.ui.theme.BrandNavyDark
 import com.example.projetorevisao.ui.theme.BrandOrange
@@ -659,16 +662,30 @@ private fun formatCount(count: Int): String {
     return if (count >= 1000) String.format("%.1fk", count / 1000f) else count.toString()
 }
 
-@Preview(showBackground = true, name = "Reels Grid - Light")
+@Preview(showBackground = true, heightDp = 820, name = "Reels Grid - Light")
 @Composable
 fun PreviewCitizenReelsGridLight() {
     CitizenSPTheme(darkTheme = false) {
-        CitizenReelsScreen()
+        Scaffold(
+            topBar = { CitizenAppTopBar(currentScreen = "reels") },
+            bottomBar = {
+                CitizenBottomNavBar(
+                    currentScreen = "reels",
+                    onSelectScreen = {},
+                    onOpenReportSheet = {}
+                )
+            }
+        ) { innerPadding ->
+            Surface(modifier = Modifier.padding(innerPadding)) {
+                CitizenReelsScreen(onOpenReportSheet = {})
+            }
+        }
     }
 }
 
 @Preview(
     showBackground = true,
+    heightDp = 820,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
     name = "Reels Player - Dark"
 )
@@ -676,14 +693,26 @@ fun PreviewCitizenReelsGridLight() {
 fun PreviewCitizenReelsPlayerDark() {
     val vm = rememberCitizenViewModel()
     CitizenSPTheme(darkTheme = true) {
-        CitizenReelFullScreenPlayer(
-            reel = vm.safetyReels.first(),
-            allReels = vm.safetyReels,
-            onClose = {},
-            onToggleLike = {},
-            onToggleBookmark = {},
-            onNextReel = {},
-            onPrevReel = {}
-        )
+        Scaffold(
+            bottomBar = {
+                CitizenBottomNavBar(
+                    currentScreen = "reels",
+                    onSelectScreen = {},
+                    onOpenReportSheet = {}
+                )
+            }
+        ) { innerPadding ->
+            Surface(modifier = Modifier.padding(innerPadding)) {
+                CitizenReelFullScreenPlayer(
+                    reel = vm.safetyReels.first(),
+                    allReels = vm.safetyReels,
+                    onClose = {},
+                    onToggleLike = {},
+                    onToggleBookmark = {},
+                    onNextReel = {},
+                    onPrevReel = {}
+                )
+            }
+        }
     }
 }
