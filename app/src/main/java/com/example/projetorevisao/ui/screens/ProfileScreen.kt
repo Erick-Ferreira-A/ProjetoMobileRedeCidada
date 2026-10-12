@@ -1,14 +1,36 @@
 package com.example.projetorevisao.ui.screens
 
+import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,202 +38,335 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.projetorevisao.ui.theme.*
+import com.example.projetorevisao.data.remote.ExternalApiConnectionStatus
+import com.example.projetorevisao.ui.components.CitizenIcons
+import com.example.projetorevisao.ui.components.RedeCidadaLogo
+import com.example.projetorevisao.ui.theme.BrandBlue
+import com.example.projetorevisao.ui.theme.BrandOrange
+import com.example.projetorevisao.ui.theme.CitizenSPTheme
+import com.example.projetorevisao.ui.theme.CitizenStatusColors
+import com.example.projetorevisao.ui.viewmodel.CitizenViewModel
+import com.example.projetorevisao.ui.viewmodel.rememberCitizenViewModel
 
 @Composable
-fun CitizenProfileScreen() {
-    var radiusKm by remember { mutableFloatStateOf(1.5f) }
-
-    Column(
+fun CitizenProfileScreen(
+    viewModel: CitizenViewModel = rememberCitizenViewModel()
+) {
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Profile Avatar & Badges
-        Box(
-            modifier = Modifier
-                .size(84.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainer)
-                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("👤", fontSize = 42.sp)
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Text(
-            text = "Erick Rondonia",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
-        Text(
-            text = "Morador de São Paulo • Nível 4 (Guardião Urbano)",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 13.sp
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Trust Score & XP Stat Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            shape = RoundedCornerShape(20.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(18.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
+        // User Identity & Trust Score Card (Figma UX Slide 6: Score de Reputação)
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("⭐ Trust Score", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text("98%", color = CitizenStatusColors.safe, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("Verificado CPF", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                }
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RedeCidadaLogo(size = 56.dp)
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Cidadão Verificado SP",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Icon(
+                                    imageVector = CitizenIcons.VerifiedCheck,
+                                    contentDescription = "Verificado",
+                                    tint = CitizenStatusColors.safe,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Text(
+                                text = "Região base: ${viewModel.selectedNeighborhood}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
 
-                Box(
-                    modifier = Modifier
-                        .height(44.dp)
-                        .width(1.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant)
-                )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🏆 Selo de Contribuição", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text("Fiscal da Paulista", color = CitizenStatusColors.warning, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("750 / 1000 XP", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Score de Confiabilidade Comunitária",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Prioriza seus relatos na triagem IA e combate fake news",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = CitizenStatusColors.verifiedBadgeBg
+                        ) {
+                            Text(
+                                text = "${viewModel.userTrustScore} pts",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = CitizenStatusColors.safe,
+                                fontWeight = FontWeight.ExtraBold,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Geofencing Radius Settings Box
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            shape = RoundedCornerShape(20.dp)
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                Text(
-                    text = "📡 Raio de Alerta Geofenced",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "Receba notificações em tempo real de furtos e alagamentos neste perímetro:",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+        // Privacy, Anonymity & Geofence Preferences
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Perímetro Monitorado:",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp
+                        text = "Privacidade & Geofence de Alertas",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold
                     )
-                    Surface(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(8.dp)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "${"%.1f".format(radiusKm)} km",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = CitizenIcons.VisibilityOff,
+                                contentDescription = null,
+                                tint = CitizenStatusColors.safe,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Anonimato por Padrão ao Reportar",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Oculta nome, foto de perfil e metadados EXIF automaticamente",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Switch(
+                            checked = viewModel.anonymousReportingDefault,
+                            onCheckedChange = { viewModel.toggleAnonymousDefault(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = CitizenStatusColors.safe
+                            )
+                        )
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Raio de Notificações Críticas (Geofence)",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "${String.format("%.1f", viewModel.geofenceRadiusKm)} km",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = BrandOrange,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                        Slider(
+                            value = viewModel.geofenceRadiusKm,
+                            onValueChange = { viewModel.updateGeofenceRadius(it) },
+                            valueRange = 0.5f..5.0f,
+                            steps = 8,
+                            colors = SliderDefaults.colors(
+                                thumbColor = BrandOrange,
+                                activeTrackColor = BrandOrange
+                            )
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Slider(
-                    value = radiusKm,
-                    onValueChange = { radiusKm = it },
-                    valueRange = 0.5f..5.0f,
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainer
-                    )
-                )
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Guardiões Cadastrados
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            shape = RoundedCornerShape(20.dp)
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "👥 Guardiões de Confiança (2/3)",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
+        // Connected APIs Hub (SSP-SP, Metrô SP, Meteorologia CGE/INMET & Google Cloud)
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = CitizenIcons.CloudSync,
+                        contentDescription = null,
+                        tint = BrandBlue,
+                        modifier = Modifier.size(22.dp)
                     )
-                    TextButton(onClick = { }) {
-                        Text("+ Adicionar", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "Ecossistema de APIs Conectadas",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            text = "Segurança Pública SP, Metrô SP, Meteorologia e Google Cloud",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("• Maria R. (Mãe) — 🟢 Alertas Ativos", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text("• Carlos A. (Irmão) — 🟢 Alertas Ativos", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
             }
+        }
+
+        items(viewModel.integratedApis, key = { it.id }) { api ->
+            ConnectedApiStatusCard(api = api)
         }
     }
 }
 
-@Preview(name = "Claro", showBackground = true)
 @Composable
-fun PreviewCitizenProfileScreen() {
+private fun ConnectedApiStatusCard(api: ExternalApiConnectionStatus) {
+    val categoryColor = when (api.category) {
+        "Segurança SP" -> CitizenStatusColors.critical
+        "Mobilidade SP" -> Color(0xFF9B3894)
+        "Meteorologia" -> BrandOrange
+        else -> BrandBlue
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = categoryColor.copy(alpha = 0.14f)
+                ) {
+                    Text(
+                        text = api.category.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = categoryColor,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(CitizenStatusColors.safe)
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text(
+                        text = "ONLINE • ${api.latencyMs}ms",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = CitizenStatusColors.safe,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Text(
+                text = api.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = "${api.provider} • ${api.endpointSummary}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Text(
+                text = api.featuresProvided,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Profile & APIs - Light")
+@Composable
+fun PreviewCitizenProfileLight() {
     CitizenSPTheme(darkTheme = false) {
         CitizenProfileScreen()
     }
 }
 
-@Preview(name = "Escuro", showBackground = true)
+@Preview(
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    name = "Profile & APIs - Dark"
+)
 @Composable
-fun PreviewCitizenProfileScreenDark() {
+fun PreviewCitizenProfileDark() {
     CitizenSPTheme(darkTheme = true) {
         CitizenProfileScreen()
     }

@@ -1,200 +1,381 @@
 package com.example.projetorevisao.ui.screens
 
+import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.projetorevisao.ui.theme.*
+import com.example.projetorevisao.ui.components.CitizenIcons
+import com.example.projetorevisao.ui.theme.BrandBlue
+import com.example.projetorevisao.ui.theme.BrandOrange
+import com.example.projetorevisao.ui.theme.CitizenSPTheme
+import com.example.projetorevisao.ui.theme.CitizenStatusColors
+import com.example.projetorevisao.ui.viewmodel.CitizenViewModel
+import com.example.projetorevisao.ui.viewmodel.MetroLineStatus
+import com.example.projetorevisao.ui.viewmodel.SafePedestrianRoute
+import com.example.projetorevisao.ui.viewmodel.rememberCitizenViewModel
 
-data class MetroLine(
-    val name: String,
-    val statusText: String,
-    val statusColor: Color,
-    val crowdLevel: String,
-    val lineAccent: Color,
-    val updatedMinutesAgo: Int
-)
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CitizenMetroScreen(
-    onLineClick: (String) -> Unit = {}
+    viewModel: CitizenViewModel = rememberCitizenViewModel()
 ) {
-    val metroLines = listOf(
-        MetroLine("Linha 1 - Azul (Jabaquara ↔ Tucuruvi)", "✅ Operação Normal", CitizenStatusColors.safe, "Livre", Color(0xFF0054A6), 2),
-        MetroLine("Linha 2 - Verde (Vila Prudente ↔ Vila Madalena)", "✅ Operação Normal", CitizenStatusColors.safe, "Livre", Color(0xFF00805D), 5),
-        MetroLine("Linha 3 - Vermelha (Palmeiras-Barra Funda ↔ Corinthians-Itaquera)", "⚠️ Plataforma Cheia na Estação Luz", CitizenStatusColors.warning, "Lotado", Color(0xFFEE3338), 1),
-        MetroLine("Linha 4 - Amarela (Vila Sônia ↔ Luz)", "✅ Operação Normal", CitizenStatusColors.safe, "Moderado", Color(0xFFFFF000), 3),
-        MetroLine("Linha 5 - Lilás (Capão Redondo ↔ Chácara Klabin)", "✅ Operação Normal", CitizenStatusColors.safe, "Livre", Color(0xFFA0529C), 8),
-        MetroLine("Linha 8 - Diamante (CPTM - Júlio Prestes ↔ Amador Bueno)", "🚨 Manutenção Emergencial / Lentidão", CitizenStatusColors.critical, "Interditado", Color(0xFF97A098), 4),
-        MetroLine("Linha 9 - Esmeralda (CPTM - Osasco ↔ Bruno Covas/Mendes-Vila Natal)", "✅ Operação Normal", CitizenStatusColors.safe, "Livre", Color(0xFF00A88F), 6)
-    )
+    var selectedRouteId by rememberSaveable { mutableStateOf(viewModel.safeRoutes.first().id) }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = "🚆 Metrô & CPTM SP",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    text = "Situação das Linhas & Densidade de Passageiros",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp
-                )
-            }
-            Surface(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(10.dp),
-                border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary))
-            ) {
-                Text(
-                    text = "SPTrans / ViaQuatro",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // AI Summary Banner (Gemini IA Transit Assistant)
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, CitizenStatusColors.insight.copy(alpha = 0.5f), RoundedCornerShape(16.dp)),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(CitizenStatusColors.insight.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
+        // Header with API status
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("🤖", fontSize = 20.sp)
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Resumo do Trânsito SP (Gemini IA)",
-                        color = CitizenStatusColors.insight,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "\"Fluxo intenso na Linha 3-Vermelha sentido Itaquera. Recomenda-se integrar via Linha 2-Verde em Ana Rosa para evitar a Sé.\"",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp,
-                        lineHeight = 16.sp
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            items(metroLines) { line ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
-                        .clickable { onLineClick(line.name) },
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = CitizenIcons.Train,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(26.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Metrô SP & Rotas Seguras",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = CitizenStatusColors.verifiedBadgeBg
                     ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Line Color Bar Accent
-                            Box(
-                                modifier = Modifier
-                                    .width(6.dp)
-                                    .height(44.dp)
-                                    .clip(RoundedCornerShape(3.dp))
-                                    .background(line.lineAccent)
+                            Icon(
+                                imageVector = CitizenIcons.CloudSync,
+                                contentDescription = null,
+                                tint = CitizenStatusColors.safe,
+                                modifier = Modifier.size(14.dp)
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = line.name,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = line.statusText,
-                                    color = line.statusColor,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = "Atualizado há ${line.updatedMinutesAgo}m por passageiros",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 11.sp
-                                )
-                            }
-                        }
-
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = line.statusColor.copy(alpha = 0.15f),
-                            border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(line.statusColor))
-                        ) {
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = line.crowdLevel,
-                                color = line.statusColor,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                text = "Direto dos Trens API",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = CitizenStatusColors.safe,
+                                fontWeight = FontWeight.Bold
                             )
                         }
+                    }
+                }
+                Text(
+                    text = "Integração em tempo real com Metrô/ViaMobilidade, SPTrans Olho Vivo e Google Maps Safe Routing.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Safe Route Planner Section (Addressing Figma UX Slide 5 & WalkSafe+)
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = CitizenIcons.RouteSafe,
+                        contentDescription = null,
+                        tint = BrandOrange,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Comparador: Rota Mais Segura vs. Mais Curta",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                viewModel.safeRoutes.forEach { route ->
+                    SafePedestrianRouteCard(
+                        route = route,
+                        isSelected = route.id == selectedRouteId,
+                        onSelect = { selectedRouteId = route.id }
+                    )
+                }
+            }
+        }
+
+        // Live Metro & CPTM Lines Section
+        item {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Status das Linhas (Metrô SP & ViaMobilidade)",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        items(viewModel.metroLines, key = { it.code }) { line ->
+            MetroLineStatusCard(line = line)
+        }
+    }
+}
+
+@Composable
+private fun SafePedestrianRouteCard(
+    route: SafePedestrianRoute,
+    isSelected: Boolean,
+    onSelect: () -> Unit
+) {
+    val accentColor = if (route.isRecommendedSafe) CitizenStatusColors.safe else CitizenStatusColors.critical
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelect),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 1.dp,
+            color = if (isSelected) accentColor else MaterialTheme.colorScheme.outlineVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = accentColor.copy(alpha = 0.15f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (route.isRecommendedSafe) CitizenIcons.VerifiedCheck else CitizenIcons.WarningTriangle,
+                            contentDescription = null,
+                            tint = accentColor,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (route.isRecommendedSafe) {
+                                "RECOMENDADA IA • SCORE ${route.safetyScore}/100"
+                            } else {
+                                "ALTO RISCO • SCORE ${route.safetyScore}/100"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = accentColor,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+
+                Text(
+                    text = "${route.durationMinutes} min (${route.distanceKm})",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+
+            Text(
+                text = route.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = "${route.origin} ➔ ${route.destination}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Text(
+                text = route.routeSummary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                RouteMetricPill("Iluminação: ${route.lightingCoveragePercent}%")
+                RouteMetricPill("Smart Sampa: ${route.activeCamerasCount} câmeras")
+                RouteMetricPill("Desvios: ${route.avoidedIncidentsCount} alertas")
+            }
+        }
+    }
+}
+
+@Composable
+private fun RouteMetricPill(text: String) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun MetroLineStatusCard(line: MetroLineStatus) {
+    val statusColor = if (line.isNormal) CitizenStatusColors.safe else CitizenStatusColors.warning
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(line.lineColor),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = line.code,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Color.White,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = line.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${line.operator} • Intervalo: ${line.headWayMinutes} min • Lotação: ${line.crowdLevel}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = statusColor.copy(alpha = 0.14f)
+                ) {
+                    Text(
+                        text = line.operationalStatus,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = statusColor,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = CitizenIcons.Shield,
+                        contentDescription = null,
+                        tint = BrandBlue,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = line.safetyNote,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${line.activeSecurityAgents} agentes de segurança monitorando acessos",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
@@ -202,17 +383,21 @@ fun CitizenMetroScreen(
     }
 }
 
-@Preview(name = "Claro", showBackground = true)
+@Preview(showBackground = true, name = "Metro Screen - Light")
 @Composable
-fun PreviewCitizenMetroScreen() {
+fun PreviewCitizenMetroLight() {
     CitizenSPTheme(darkTheme = false) {
         CitizenMetroScreen()
     }
 }
 
-@Preview(name = "Escuro", showBackground = true)
+@Preview(
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    name = "Metro Screen - Dark"
+)
 @Composable
-fun PreviewCitizenMetroScreenDark() {
+fun PreviewCitizenMetroDark() {
     CitizenSPTheme(darkTheme = true) {
         CitizenMetroScreen()
     }
