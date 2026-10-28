@@ -95,7 +95,7 @@ fun CitizenReelsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                             Text(
                                 text = "Vídeos de Segurança",
                                 style = MaterialTheme.typography.headlineMedium,

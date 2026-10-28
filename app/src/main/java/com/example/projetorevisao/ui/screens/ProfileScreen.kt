@@ -109,7 +109,7 @@ fun CitizenProfileScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                             Text(
                                 text = "Score de Confiabilidade Comunitária",
                                 style = MaterialTheme.typography.labelLarge,
@@ -128,6 +128,7 @@ fun CitizenProfileScreen(
                         ) {
                             Text(
                                 text = "${viewModel.userTrustScore} pts",
+                                maxLines = 1,
                                 style = MaterialTheme.typography.titleMedium,
                                 color = CitizenStatusColors.safe,
                                 fontWeight = FontWeight.ExtraBold,
