@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Fotos e vídeos tirados pela câmera antes do envio (apagados pelo sistema quando falta espaço). -->
+    <cache-path name="camera" path="camera/" />
+</paths>

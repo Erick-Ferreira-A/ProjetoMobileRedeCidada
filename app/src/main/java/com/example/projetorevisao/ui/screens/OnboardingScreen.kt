@@ -64,10 +64,9 @@ fun CitizenOnboardingScreen(
             onNext = { step = 1 }
         )
     } else {
-        OnboardingLocationStep(
-            onBack = { step = 0 },
-            onAllowLocation = onFinishOnboarding,
-            onSkip = onFinishOnboarding
+        LocationPermissionGate(
+            onGranted = onFinishOnboarding,
+            onBack = { step = 0 }
         )
     }
 }
@@ -121,7 +120,7 @@ private fun OnboardingWelcomeStep(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "Sua rede de segurança comunitária integrada às APIs de São Paulo",
+                text = "Segurança comunitária e mobilidade urbana em São Paulo",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White.copy(alpha = 0.85f),
                 textAlign = TextAlign.Center
@@ -138,20 +137,20 @@ private fun OnboardingWelcomeStep(
             OnboardingPillarCard(
                 icon = CitizenIcons.Notifications,
                 iconTint = BrandOrange,
-                title = "Alertas em Tempo Real",
-                description = "Receba notificações instantâneas de incidentes próximos, clima severo (CGE/INMET) e Metrô SP."
+                title = "Relatos da vizinhança",
+                description = "Veja e envie relatos com foto ou vídeo do que acontece perto de você."
             )
             OnboardingPillarCard(
                 icon = CitizenIcons.Groups,
                 iconTint = Color(0xFF38BDF8),
-                title = "Comunidade Ativa e Anônima",
-                description = "Compartilhe relatos com anonimato garantido por padrão e ajude a proteger seus vizinhos."
+                title = "SOS com guardiões",
+                description = "Em perigo, ligue 190 e avise pelo WhatsApp as pessoas de confiança que você cadastrar."
             )
             OnboardingPillarCard(
                 icon = CitizenIcons.PoliceShield,
                 iconTint = Color(0xFF34D399),
-                title = "Transparência Policial & IA",
-                description = "Acompanhe o status do chamado (Reportado ➔ No Local ➔ Controlado) e rotas seguras com Google Cloud."
+                title = "Clima e transporte",
+                description = "Risco de chuva e vento, status dos trilhos e previsão dos ônibus em tempo real."
             )
         }
 
@@ -245,204 +244,6 @@ private fun OnboardingPillarCard(
 }
 
 @Composable
-private fun OnboardingLocationStep(
-    onBack: () -> Unit,
-    onAllowLocation: () -> Unit,
-    onSkip: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Top back row (Figma 192:124)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = CitizenIcons.ArrowBack,
-                    contentDescription = "Voltar",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-            Text(
-                text = "Voltar",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(88.dp)
-                    .clip(CircleShape)
-                    .background(BrandBlueHero.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = CitizenIcons.LocationPin,
-                    contentDescription = null,
-                    tint = BrandBlueHero,
-                    modifier = Modifier.size(44.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Text(
-                text = "Permita sua Localização",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Para enviar alertas relevantes da sua região em São Paulo, precisamos acessar sua localização com segurança.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(22.dp))
-
-            // Benefits Card (Figma 192:143)
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    LocationBenefitRow("Alertas precisos de incidentes num raio de 500m a 5km")
-                    LocationBenefitRow("Integração com CGE-SP (Alagamentos), SSP-SP e Metrô SP")
-                    LocationBenefitRow("Cálculo de Rota Segura desviando de ruas com ocorrências")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Privacy Guarantee Box (Figma 192:192)
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = CitizenStatusColors.verifiedBadgeBg,
-                border = BorderStroke(1.dp, CitizenStatusColors.safe.copy(alpha = 0.35f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = CitizenIcons.Lock,
-                        contentDescription = null,
-                        tint = CitizenStatusColors.safe,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "Sua privacidade é protegida",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = CitizenStatusColors.safe,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Seus dados nunca são vendidos e todos os seus relatos na comunidade podem ser enviados de forma 100% anônima.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Button(
-                onClick = onAllowLocation,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BrandBlue,
-                    contentColor = Color.White
-                )
-            ) {
-                Icon(
-                    imageVector = CitizenIcons.MyLocation,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Permitir Localização",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            TextButton(
-                onClick = onSkip,
-                modifier = Modifier.padding(top = 4.dp)
-            ) {
-                Text(
-                    text = "Pular por Agora",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            OnboardingDotsIndicator(activeStep = 1, darkBackground = false)
-        }
-    }
-}
-
-@Composable
-private fun LocationBenefitRow(text: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = CitizenIcons.VerifiedCheck,
-            contentDescription = null,
-            tint = CitizenStatusColors.safe,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-@Composable
 private fun OnboardingDotsIndicator(
     activeStep: Int,
     darkBackground: Boolean = true
@@ -486,10 +287,6 @@ fun PreviewCitizenOnboardingWelcome() {
 @Composable
 fun PreviewCitizenOnboardingLocationDark() {
     CitizenSPTheme(darkTheme = true) {
-        OnboardingLocationStep(
-            onBack = {},
-            onAllowLocation = {},
-            onSkip = {}
-        )
+        LocationPermissionGate(onGranted = {}, onBack = {})
     }
 }

@@ -17,3 +17,12 @@ local.properties
 *.keystore
 
 /.kotlin/
+
+# Banco SQLite local do servidor
+server/*.db
+
+# Assinatura de release
+keystore.properties
+server/uploads/
+server/secrets.properties
+server/build/

@@ -10,6 +10,15 @@ kotlin = "2.2.10"
 composeBom = "2026.02.01"
 mapsCompose = "6.4.1"
 playServicesMaps = "19.1.0"
+room = "2.8.5"
+navigationCompose = "2.10.2"
+ksp = "2.2.10-2.0.2"
+ktor = "3.6.0"
+playServicesLocation = "21.3.0"
+sqliteJdbc = "3.45.1.0"
+logback = "1.5.16"
+kotlinxSerialization = "1.8.0"
+bcrypt = "0.10.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -28,7 +37,35 @@ androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-te
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 google-maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }
 google-play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
+google-play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+
+# Ktor Server & Backend dependencies
+ktorServerCore = { group = "io.ktor", name = "ktor-server-core-jvm", version.ref = "ktor" }
+ktorServerNetty = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
+ktorServerContentNegotiation = { group = "io.ktor", name = "ktor-server-content-negotiation-jvm", version.ref = "ktor" }
+ktorSerializationKotlinxJson = { group = "io.ktor", name = "ktor-serialization-kotlinx-json-jvm", version.ref = "ktor" }
+ktorServerCors = { group = "io.ktor", name = "ktor-server-cors-jvm", version.ref = "ktor" }
+ktorServerStatusPages = { group = "io.ktor", name = "ktor-server-status-pages-jvm", version.ref = "ktor" }
+ktorServerCallLogging = { group = "io.ktor", name = "ktor-server-call-logging-jvm", version.ref = "ktor" }
+ktorServerAuth = { group = "io.ktor", name = "ktor-server-auth-jvm", version.ref = "ktor" }
+ktorServerAuthJwt = { group = "io.ktor", name = "ktor-server-auth-jwt-jvm", version.ref = "ktor" }
+ktorServerRateLimit = { group = "io.ktor", name = "ktor-server-rate-limit-jvm", version.ref = "ktor" }
+ktorServerForwardedHeader = { group = "io.ktor", name = "ktor-server-forwarded-header-jvm", version.ref = "ktor" }
+bcrypt = { group = "at.favre.lib", name = "bcrypt", version.ref = "bcrypt" }
+ktorClientCio = { group = "io.ktor", name = "ktor-client-cio-jvm", version.ref = "ktor" }
+ktorClientMock = { group = "io.ktor", name = "ktor-client-mock-jvm", version.ref = "ktor" }
+ktorServerTestHost = { group = "io.ktor", name = "ktor-server-test-host-jvm", version.ref = "ktor" }
+sqliteJdbc = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "sqliteJdbc" }
+logbackClassic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
+kotlinxSerializationJson = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

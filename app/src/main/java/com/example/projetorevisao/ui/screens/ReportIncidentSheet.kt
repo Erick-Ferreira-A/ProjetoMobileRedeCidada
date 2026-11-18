@@ -1,6 +1,22 @@
 package com.example.projetorevisao.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import com.example.projetorevisao.data.media.CameraCapture
+import com.example.projetorevisao.data.media.MediaAttachment
+import com.example.projetorevisao.ui.components.LocalMediaThumbnail
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
@@ -59,16 +75,77 @@ fun ReportIncidentModalSheet(
         title: String,
         description: String,
         address: String,
-        isAnonymous: Boolean
+        isAnonymous: Boolean,
+        attachments: List<Uri>
     ) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedCategory by rememberSaveable { mutableStateOf(IncidentCategory.ROUBO_FURTO) }
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
-    var address by rememberSaveable { mutableStateOf("Av. Carlos Caldeira Filho - $currentNeighborhood") }
+    var address by rememberSaveable { mutableStateOf("Próximo a $currentNeighborhood") }
     var isAnonymous by rememberSaveable { mutableStateOf(defaultAnonymous) }
-    var mediaAttached by rememberSaveable { mutableStateOf(false) }
+    var formError by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    var attachments by remember { mutableStateOf(listOf<Uri>()) }
+    // Seletor de fotos do Android: não precisa de permissão de armazenamento.
+    val mediaPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(MediaAttachment.MAX_ATTACHMENTS)
+    ) { picked ->
+        attachments = (attachments + picked).distinct().take(MediaAttachment.MAX_ATTACHMENTS)
+    }
+
+    // --- Câmera do aparelho (foto ou vídeo), com permissão pedida na hora do uso ---
+    var cameraMessage by remember { mutableStateOf<String?>(null) }
+    var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingCameraAction by remember { mutableStateOf<String?>(null) } // "photo" ou "video"
+
+    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
+        val uri = pendingCaptureUri
+        if (saved && uri != null) attachments = (attachments + uri).take(MediaAttachment.MAX_ATTACHMENTS)
+        pendingCaptureUri = null
+    }
+    val captureVideo = rememberLauncherForActivityResult(CameraCapture.LimitedVideoCapture()) { saved ->
+        val uri = pendingCaptureUri
+        if (saved && uri != null) attachments = (attachments + uri).take(MediaAttachment.MAX_ATTACHMENTS)
+        pendingCaptureUri = null
+    }
+
+    fun openCamera(action: String) {
+        cameraMessage = null
+        try {
+            if (action == "photo") {
+                val uri = CameraCapture.newPhotoUri(context)
+                pendingCaptureUri = uri
+                takePicture.launch(uri)
+            } else {
+                val uri = CameraCapture.newVideoUri(context)
+                pendingCaptureUri = uri
+                captureVideo.launch(uri)
+            }
+        } catch (_: ActivityNotFoundException) {
+            cameraMessage = "Este aparelho não tem um app de câmera disponível."
+        }
+    }
+
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val action = pendingCameraAction
+        pendingCameraAction = null
+        if (granted && action != null) {
+            openCamera(action)
+        } else if (!granted) {
+            cameraMessage = "Sem acesso à câmera não dá para tirar foto pelo app. Você pode liberar nas configurações ou escolher da galeria."
+        }
+    }
+
+    fun requestCamera(action: String) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            openCamera(action)
+        } else {
+            pendingCameraAction = action
+            cameraPermission.launch(Manifest.permission.CAMERA)
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -96,7 +173,7 @@ fun ReportIncidentModalSheet(
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        text = "Envio rápido em 15s • Triagem Google Cloud IA + SSP-SP",
+                        text = "O relato fica visível para quem usa o app na região. Não é enviado à polícia: em perigo, ligue 190.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -135,13 +212,13 @@ fun ReportIncidentModalSheet(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = if (isAnonymous) "Denúncia 100% Anônima Ativa" else "Relato com Perfil Público",
+                                text = if (isAnonymous) "Publicar como anônimo" else "Publicar com meu nome",
                                 style = MaterialTheme.typography.labelLarge,
                                 color = if (isAnonymous) CitizenStatusColors.safe else MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Sua identidade e metadados EXIF são ocultados para sua total proteção.",
+                                text = "No modo anônimo, seu nome não aparece para outras pessoas.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -209,7 +286,7 @@ fun ReportIncidentModalSheet(
 
             OutlinedTextField(
                 value = title,
-                onValueChange = { title = it },
+                onValueChange = { title = it; formError = false },
                 label = { Text("Título curto da ocorrência") },
                 placeholder = { Text("Ex: Suspeitos em moto próximo à saída do metrô") },
                 singleLine = true,
@@ -219,8 +296,8 @@ fun ReportIncidentModalSheet(
 
             OutlinedTextField(
                 value = address,
-                onValueChange = { address = it },
-                label = { Text("Localização (GPS Automático)") },
+                onValueChange = { address = it; formError = false },
+                label = { Text("Localização (edite ou informe manualmente)") },
                 leadingIcon = {
                     Icon(
                         imageVector = CitizenIcons.LocationPin,
@@ -235,8 +312,8 @@ fun ReportIncidentModalSheet(
 
             OutlinedTextField(
                 value = description,
-                onValueChange = { description = it },
-                label = { Text("Detalhes para ajudar a comunidade e autoridades") },
+                onValueChange = { description = it; formError = false },
+                label = { Text("Detalhes do relato") },
                 placeholder = { Text("Descreva o que aconteceu, sentido da via ou orientações de segurança...") },
                 minLines = 2,
                 maxLines = 3,
@@ -244,42 +321,56 @@ fun ReportIncidentModalSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Photo / Reel Video Attachment Button
-            OutlinedButton(
-                onClick = { mediaAttached = !mediaAttached },
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(
-                    1.dp,
-                    if (mediaAttached) CitizenStatusColors.safe else MaterialTheme.colorScheme.outlineVariant
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = if (mediaAttached) CitizenIcons.VerifiedCheck else CitizenIcons.Camera,
-                    contentDescription = null,
-                    tint = if (mediaAttached) CitizenStatusColors.safe else BrandOrange,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+            if (formError) {
                 Text(
-                    text = if (mediaAttached) {
-                        "Foto/Vídeo anexado com desfoque facial automático (IA)"
-                    } else {
-                        "Anexar Foto ou Vídeo para o Reels de Segurança"
-                    },
-                    color = if (mediaAttached) CitizenStatusColors.safe else MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold
+                    text = "Preencha o título, o endereço e a descrição para salvar o relato.",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
                 )
+            }
+
+            // Photo / Reel Video Attachment Button
+            if (attachments.isNotEmpty()) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(attachments, key = { it.toString() }) { uri ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            LocalMediaThumbnail(uri = uri, isVideo = MediaAttachment.isVideo(context, uri), size = 76.dp)
+                            TextButton(onClick = { attachments = attachments - uri }) { Text("Remover") }
+                        }
+                    }
+                }
+            }
+
+            val canAddMore = attachments.size < MediaAttachment.MAX_ATTACHMENTS
+            Text(
+                text = "Fotos e vídeos (${attachments.size}/${MediaAttachment.MAX_ATTACHMENTS})",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                AttachButton("Foto", enabled = canAddMore, modifier = Modifier.weight(1f)) { requestCamera("photo") }
+                AttachButton("Vídeo", enabled = canAddMore, modifier = Modifier.weight(1f)) { requestCamera("video") }
+                AttachButton("Galeria", enabled = canAddMore, modifier = Modifier.weight(1f)) {
+                    mediaPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                }
+            }
+            cameraMessage?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
 
             Button(
                 onClick = {
+                    if (title.isBlank() || address.isBlank() || description.isBlank()) {
+                        formError = true
+                        return@Button
+                    }
                     onSubmitReport(
                         selectedCategory,
                         title,
                         description,
                         address,
-                        isAnonymous
+                        isAnonymous,
+                        attachments
                     )
                     onDismiss()
                 },
@@ -299,12 +390,27 @@ fun ReportIncidentModalSheet(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Publicar Alerta na Rede Cidadã (+15 pts)",
+                    text = if (attachments.isEmpty()) "Enviar relato" else "Enviar relato com ${attachments.size} anexo(s)",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun AttachButton(label: String, enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = modifier.heightIn(min = 48.dp)
+    ) {
+        Icon(CitizenIcons.Camera, contentDescription = null, tint = BrandOrange, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(label, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -316,7 +422,7 @@ fun ReportIncidentModalSheetPreview() {
             currentNeighborhood = "Vila Mariana",
             defaultAnonymous = true,
             onDismiss = {},
-            onSubmitReport = { _, _, _, _, _ -> }
+            onSubmitReport = { _, _, _, _, _, _ -> }
         )
     }
 }

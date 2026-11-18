@@ -17,7 +17,7 @@ class ExampleUnitTest {
     @Test
     fun integratedApisCatalog_containsAllRequiredPublicAndCloudApis() {
         val apis = SpPublicSafetyApiService.getIntegratedApisCatalog()
-        assertEquals(6, apis.size)
+        assertEquals(5, apis.size)
         assertTrue(apis.any { it.category == "Segurança SP" })
         assertTrue(apis.any { it.category == "Mobilidade SP" })
         assertTrue(apis.any { it.category == "Meteorologia" })
@@ -26,9 +26,10 @@ class ExampleUnitTest {
 
     @Test
     fun incidentCategories_haveFigmaAlignedBadges() {
-        assertEquals("ROUBO À MÃO ARMADA", IncidentCategory.ROUBO_FURTO.badgeTitle)
-        assertEquals("INCÊNDIO EM RESIDÊNCIA", IncidentCategory.INCENDIO.badgeTitle)
-        assertEquals("ALAGAMENTO NA VIA", IncidentCategory.ALAGAMENTO.badgeTitle)
-        assertEquals("ALERTA DE TEMPESTADE", IncidentCategory.TEMPESTADE.badgeTitle)
+        // Selos genéricos: não inventam detalhes que o morador não informou.
+        assertEquals("ASSALTO / ROUBO", IncidentCategory.ROUBO_FURTO.badgeTitle)
+        assertEquals("INCÊNDIO", IncidentCategory.INCENDIO.badgeTitle)
+        assertEquals("ALAGAMENTO", IncidentCategory.ALAGAMENTO.badgeTitle)
+        assertEquals("TEMPESTADE", IncidentCategory.TEMPESTADE.badgeTitle)
     }
 }
