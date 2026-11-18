@@ -1,0 +1,6 @@
+{
+  "name": "rede-cidada-relay-artesp",
+  "private": true,
+  "description": "Intermediário em São Paulo para a API Trilhos da ARTESP (o servidor principal fica nos EUA).",
+  "engines": { "node": ">=20" }
+}

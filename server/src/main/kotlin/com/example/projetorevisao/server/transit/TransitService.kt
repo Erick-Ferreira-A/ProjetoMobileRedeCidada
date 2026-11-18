@@ -95,7 +95,9 @@ class TransitService(
     engine: HttpClientEngine = CIO.create(),
     private val sptransToken: String? = AppConfig.sptransToken,
     private val artespKey: String? = AppConfig.artespApiKey,
-    private val now: () -> Long = System::currentTimeMillis
+    private val now: () -> Long = System::currentTimeMillis,
+    private val artespRelayUrl: String? = AppConfig.artespRelayUrl,
+    private val artespRelayToken: String? = AppConfig.artespRelayToken
 ) {
     private val log = LoggerFactory.getLogger(TransitService::class.java)
     private val json = Json { ignoreUnknownKeys = true }
@@ -270,13 +272,19 @@ class TransitService(
      * limite estourar (429), devolve o último resultado bom que houver.
      */
     suspend fun railStatus(): TransitResult<RailStatusDto> = railMutex.withLock {
-        if (artespKey.isNullOrBlank()) {
+        val useRelay = !artespRelayUrl.isNullOrBlank()
+        if (!useRelay && artespKey.isNullOrBlank()) {
             return TransitResult.NotConfigured("Status dos trilhos (ARTESP API Trilhos) ainda não configurado no servidor.")
         }
         cached<RailStatusDto>("rail")?.let { return TransitResult.Ok(it) }
         val stale = cache["rail"]?.value as RailStatusDto?
         try {
-            val response = client.get(ARTESP_STATUS_URL) { header(HttpHeaders.Authorization, "Api-Key $artespKey") }
+            // Pelo intermediário no Brasil (que tem a chave) ou direto na ARTESP.
+            val response = if (useRelay) {
+                client.get(artespRelayUrl!!) { header("X-Relay-Token", artespRelayToken.orEmpty()) }
+            } else {
+                client.get(ARTESP_STATUS_URL) { header(HttpHeaders.Authorization, "Api-Key $artespKey") }
+            }
             when (response.status.value) {
                 in 200..299 -> {
                     val dto = parseRail(json.parseToJsonElement(response.bodyAsText()))
