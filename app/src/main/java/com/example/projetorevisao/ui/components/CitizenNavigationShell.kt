@@ -38,7 +38,6 @@ import com.example.projetorevisao.ui.theme.CitizenStatusColors
 @Composable
 fun CitizenAppTopBar(
     currentScreen: String,
-    trustScore: Int = 940,
     onNavigateHome: () -> Unit = {},
     onSosClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
@@ -80,11 +79,11 @@ fun CitizenAppTopBar(
                 Column {
                     Text(
                         text = when (currentScreen) {
-                            "metro" -> "Mobilidade & Rotas Seguras"
-                            "reels" -> "Reels de Segurança SP"
-                            "sos" -> "Central SOS & Guardiões"
-                            "profile" -> "Perfil & APIs Conectadas"
-                            else -> "Rede Cidadã SP"
+                            "metro" -> "Mobilidade urbana"
+                            "reels" -> "Fotos e vídeos"
+                            "sos" -> "Emergência"
+                            "profile" -> "Minha conta"
+                            else -> "Rede Cidadã"
                         },
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -92,11 +91,11 @@ fun CitizenAppTopBar(
                     )
                     Text(
                         text = when (currentScreen) {
-                            "metro" -> "Direto dos Trens • SPTrans • Safe Routing"
-                            "reels" -> "Vídeos verificados • Bombeiros, PM e Comunidade"
-                            "sos" -> "Acionamento 190/193 e Rede de Parentes Guardiões"
-                            "profile" -> "Privacidade Anônima • Geofence • Google Cloud"
-                            else -> "São Paulo • SSP-SP, Metrô & CGE Ao Vivo"
+                            "metro" -> "Trilhos e ônibus em tempo real"
+                            "reels" -> "Enviados nos relatos da comunidade"
+                            "sos" -> "Ligue 190 ou avise seus guardiões"
+                            "profile" -> "Conta, guardiões e preferências"
+                            else -> "Segurança comunitária • São Paulo"
                         },
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -108,32 +107,6 @@ fun CitizenAppTopBar(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Community Trust Score Pill
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = CitizenStatusColors.verifiedBadgeBg,
-                    modifier = Modifier.clickable(onClick = onProfileClick)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = CitizenIcons.Shield,
-                            contentDescription = "Score de Confiabilidade",
-                            tint = CitizenStatusColors.safe,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "$trustScore",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = CitizenStatusColors.safe,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                    }
-                }
-
                 // Quick 190 SOS Pill
                 if (currentScreen != "sos") {
                     Surface(
@@ -148,13 +121,13 @@ fun CitizenAppTopBar(
                         ) {
                             Icon(
                                 imageVector = CitizenIcons.SosEmergency,
-                                contentDescription = "SOS 190",
+                            contentDescription = "Abrir tela de emergência",
                                 tint = CitizenStatusColors.critical,
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(3.dp))
                             Text(
-                                text = "190",
+                                text = "SOS",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = CitizenStatusColors.critical,
                                 fontWeight = FontWeight.ExtraBold
@@ -180,7 +153,7 @@ fun CitizenAppTopBar(
                 ) {
                     Icon(
                         imageVector = CitizenIcons.Person,
-                        contentDescription = "Perfil e APIs",
+                        contentDescription = "Minha conta",
                         tint = if (isProfileSelected) Color.White else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(18.dp)
                     )
@@ -260,7 +233,7 @@ fun CitizenBottomNavBar(
                 ) {
                     Icon(
                         imageVector = CitizenIcons.Add,
-                        contentDescription = "Reportar Incidente Anônimo",
+                        contentDescription = "Reportar ocorrência",
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
@@ -281,11 +254,11 @@ fun CitizenBottomNavBar(
             icon = {
                 Icon(
                     imageVector = CitizenIcons.Reels,
-                    contentDescription = "Reels de Segurança",
+                    contentDescription = "Fotos e vídeos dos relatos",
                     modifier = Modifier.size(22.dp)
                 )
             },
-            label = { Text("Reels", fontSize = 10.sp) },
+            label = { Text("Vídeos", fontSize = 10.sp) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = MaterialTheme.colorScheme.primary,
                 selectedTextColor = MaterialTheme.colorScheme.primary,

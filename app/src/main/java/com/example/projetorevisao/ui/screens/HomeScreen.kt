@@ -39,6 +39,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -50,11 +52,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.projetorevisao.data.remote.SspDistrictTelemetry
 import com.example.projetorevisao.data.remote.WeatherSafetyTelemetry
 import com.example.projetorevisao.ui.components.CitizenAppTopBar
 import com.example.projetorevisao.ui.components.CitizenBottomNavBar
 import com.example.projetorevisao.ui.components.CitizenIcons
+import com.example.projetorevisao.ui.components.IncidentMediaViewer
+import com.example.projetorevisao.ui.components.RemoteMediaTile
 import com.example.projetorevisao.ui.components.CitizenInteractiveMapContainer
 import com.example.projetorevisao.ui.theme.BrandBlue
 import com.example.projetorevisao.ui.theme.BrandBlueHero
@@ -63,6 +66,8 @@ import com.example.projetorevisao.ui.theme.CitizenSPTheme
 import com.example.projetorevisao.ui.theme.CitizenStatusColors
 import com.example.projetorevisao.ui.viewmodel.CitizenViewModel
 import com.example.projetorevisao.ui.viewmodel.IncidentAlert
+import com.example.projetorevisao.ui.viewmodel.NoticeTone
+import com.example.projetorevisao.ui.viewmodel.ReportReason
 import com.example.projetorevisao.ui.viewmodel.IncidentCategory
 import com.example.projetorevisao.ui.viewmodel.IncidentStatus
 import com.example.projetorevisao.ui.viewmodel.rememberCitizenViewModel
@@ -72,7 +77,8 @@ fun CitizenHomeScreen(
     viewModel: CitizenViewModel = rememberCitizenViewModel(),
     onSosClick: () -> Unit = {},
     onOpenReportSheet: () -> Unit = {},
-    onOpenProfile: () -> Unit = {}
+    onOpenProfile: () -> Unit = {},
+    onCenterOnUser: () -> Unit = {}
 ) {
     val selectedIncident = viewModel.selectedIncidentForDetail
     var showSearchField by rememberSaveable { mutableStateOf(false) }
@@ -84,14 +90,14 @@ fun CitizenHomeScreen(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Neighborhood Selector Chips + Quick Search Toggle
+        // Onde você está + busca
         item {
             NeighborhoodSelectorRow(
-                neighborhoods = viewModel.availableNeighborhoods,
-                selected = viewModel.selectedNeighborhood,
+                areaLabel = viewModel.areaLabel,
+                hasLocation = viewModel.userLatitude != null,
                 showSearch = showSearchField,
                 onToggleSearch = { showSearchField = !showSearchField },
-                onSelect = { viewModel.selectNeighborhood(it) }
+                onCenterOnUser = onCenterOnUser
             )
         }
 
@@ -118,13 +124,16 @@ fun CitizenHomeScreen(
         // Interactive Map View Card (Figma 32:781)
         item {
             InteractiveIncidentMapCard(
-                neighborhood = viewModel.selectedNeighborhood,
+                neighborhood = viewModel.areaLabel,
                 incidents = viewModel.incidents,
                 showHeatmap = viewModel.showHeatmapOverlay,
-                smartSampaCameras = viewModel.districtTelemetry.smartSampaCamerasActive,
                 onToggleHeatmap = { viewModel.toggleHeatmap() },
                 onPinClick = { viewModel.openIncidentDetail(it) },
-                onReportClick = onOpenReportSheet
+                onCenterOnUser = onCenterOnUser,
+                userLatitude = viewModel.userLatitude,
+                userLongitude = viewModel.userLongitude,
+                userAreaLabel = viewModel.userAreaLabel,
+                userLocationVersion = viewModel.userLocationVersion
             )
         }
 
@@ -132,10 +141,34 @@ fun CitizenHomeScreen(
         item {
             PublicSafetyApisLiveBanner(
                 weather = viewModel.weatherTelemetry,
-                district = viewModel.districtTelemetry,
                 isRefreshing = viewModel.isRefreshingApis,
                 onRefresh = { viewModel.refreshPublicApis() }
             )
+        }
+
+        viewModel.incidentActionMessage?.let { message ->
+            item(key = "action-message") {
+                LaunchedEffect(message) {
+                    kotlinx.coroutines.delay(5_000)
+                    viewModel.clearIncidentActionMessage()
+                }
+                Text(text = message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+
+        viewModel.userNotice?.let { notice ->
+            item {
+                Text(
+                    text = notice,
+                    color = when (viewModel.userNoticeTone) {
+                        NoticeTone.SUCCESS -> CitizenStatusColors.safe
+                        NoticeTone.INFO -> MaterialTheme.colorScheme.onSurfaceVariant
+                        NoticeTone.ERROR -> MaterialTheme.colorScheme.error
+                    },
+                    fontWeight = if (viewModel.userNoticeTone == NoticeTone.SUCCESS) FontWeight.SemiBold else FontWeight.Normal,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
 
         // Category Filter Chips Row
@@ -155,13 +188,22 @@ fun CitizenHomeScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Alertas Recentes",
+                        text = "Relatos da comunidade",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        text = "${viewModel.incidents.size} ocorrências verificadas na sua região",
+                        text = when (viewModel.incidents.size) {
+                            0 -> "Nenhum relato por enquanto"
+                            1 -> "1 relato"
+                            else -> "${viewModel.incidents.size} relatos"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Enviados por moradores. Não são confirmados pela polícia.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -202,6 +244,21 @@ fun CitizenHomeScreen(
                 onConfirmClick = { viewModel.confirmIncident(incident.id) }
             )
         }
+
+        if (viewModel.incidents.isEmpty()) {
+            item {
+                Text(
+                    text = if (viewModel.searchQuery.isNotBlank() || viewModel.selectedCategoryFilter != null) {
+                        "Nenhum relato com esse filtro."
+                    } else {
+                        "Ainda não há relatos nesta região. Viu algo? Toque em Reportar para avisar a vizinhança."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 12.dp)
+                )
+            }
+        }
     }
 
     if (selectedIncident != null) {
@@ -209,6 +266,9 @@ fun CitizenHomeScreen(
             incident = selectedIncident,
             onDismiss = { viewModel.openIncidentDetail(null) },
             onConfirm = { viewModel.confirmIncident(selectedIncident.id) },
+            actionMessage = viewModel.incidentActionMessage,
+            onReport = { reason, details, done -> viewModel.reportIncident(selectedIncident.id, reason, details, done) },
+            onBlockAuthor = { viewModel.blockAuthor(selectedIncident.id) },
             onSosClick = {
                 viewModel.openIncidentDetail(null)
                 onSosClick()
@@ -219,11 +279,11 @@ fun CitizenHomeScreen(
 
 @Composable
 private fun NeighborhoodSelectorRow(
-    neighborhoods: List<String>,
-    selected: String,
+    areaLabel: String,
+    hasLocation: Boolean,
     showSearch: Boolean,
     onToggleSearch: () -> Unit,
-    onSelect: (String) -> Unit
+    onCenterOnUser: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -240,43 +300,38 @@ private fun NeighborhoodSelectorRow(
             androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = CitizenIcons.Search,
-                    contentDescription = "Buscar endereço",
+                    contentDescription = "Buscar relatos",
                     tint = if (showSearch) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )
             }
         }
 
-        Row(
+        Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = BrandBlue.copy(alpha = 0.12f),
             modifier = Modifier
                 .weight(1f)
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .clickable(onClickLabel = "Atualizar minha localização", onClick = onCenterOnUser)
         ) {
-            neighborhoods.forEach { item ->
-                val isSelected = item == selected
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onSelect(item) },
-                    label = {
-                        Text(
-                            text = item,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            maxLines = 1
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = CitizenIcons.LocationPin,
-                            contentDescription = null,
-                            modifier = Modifier.size(15.dp)
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = BrandBlue.copy(alpha = 0.15f),
-                        selectedLabelColor = MaterialTheme.colorScheme.primary,
-                        selectedLeadingIconColor = BrandOrange
-                    )
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = CitizenIcons.LocationPin,
+                    contentDescription = null,
+                    tint = BrandOrange,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = if (hasLocation) "Perto de você • $areaLabel" else "Buscando sua localização…",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -284,23 +339,77 @@ private fun NeighborhoodSelectorRow(
 }
 
 @Composable
+private fun ReportIncidentDialog(onDismiss: () -> Unit, onSubmit: (ReportReason, String) -> Unit) {
+    var reason by remember { mutableStateOf<ReportReason?>(null) }
+    var details by remember { mutableStateOf("") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Denunciar relato") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    "O relato some para você na hora e a equipe analisa. Com várias denúncias, ele sai do ar para todos.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                ReportReason.entries.forEach { option ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { reason = option }
+                    ) {
+                        androidx.compose.material3.RadioButton(selected = reason == option, onClick = { reason = option })
+                        Text(option.label, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                OutlinedTextField(
+                    value = details,
+                    onValueChange = { details = it.take(500) },
+                    label = { Text("Detalhes (opcional)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(
+                enabled = reason != null,
+                onClick = { reason?.let { onSubmit(it, details.trim()) } }
+            ) { Text("Enviar denúncia") }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
+}
+
+@Composable
 private fun InteractiveIncidentMapCard(
     neighborhood: String,
     incidents: List<IncidentAlert>,
     showHeatmap: Boolean,
-    smartSampaCameras: Int,
     onToggleHeatmap: () -> Unit,
     onPinClick: (IncidentAlert) -> Unit,
-    onReportClick: () -> Unit
+    onCenterOnUser: () -> Unit,
+    userLatitude: Double?,
+    userLongitude: Double?,
+    userAreaLabel: String?,
+    userLocationVersion: Int
 ) {
     CitizenInteractiveMapContainer(
         neighborhood = neighborhood,
         incidents = incidents,
         showHeatmap = showHeatmap,
-        smartSampaCameras = smartSampaCameras,
         onToggleHeatmap = onToggleHeatmap,
         onPinClick = onPinClick,
-        onReportClick = onReportClick,
+        onCenterOnUser = onCenterOnUser,
+        userLatitude = userLatitude,
+        userLongitude = userLongitude,
+        userAreaLabel = userAreaLabel,
+        userLocationVersion = userLocationVersion,
         modifier = Modifier
             .fillMaxWidth()
             .height(210.dp)
@@ -310,10 +419,18 @@ private fun InteractiveIncidentMapCard(
 @Composable
 private fun PublicSafetyApisLiveBanner(
     weather: WeatherSafetyTelemetry,
-    district: SspDistrictTelemetry,
     isRefreshing: Boolean,
     onRefresh: () -> Unit
 ) {
+    if (!weather.isLiveNetworkData) {
+        WeatherUnavailableCard(isRefreshing = isRefreshing, onRefresh = onRefresh)
+        return
+    }
+    val riskLabel = when (weather.inmetAlertLevel) {
+        "LARANJA", "VERMELHO" -> "ALTO"
+        "AMARELO" -> "MÉDIO"
+        else -> "BAIXO"
+    }
     val alertColor = when (weather.inmetAlertLevel) {
         "LARANJA", "VERMELHO" -> BrandOrange
         "AMARELO" -> CitizenStatusColors.warning
@@ -350,7 +467,7 @@ private fun PublicSafetyApisLiveBanner(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "CLIMA & DEFESA CIVIL (${weather.inmetAlertLevel})",
+                        text = "RISCO DE CHUVA E VENTO: $riskLabel",
                         style = MaterialTheme.typography.labelSmall,
                         color = alertColor,
                         fontWeight = FontWeight.ExtraBold,
@@ -378,7 +495,7 @@ private fun PublicSafetyApisLiveBanner(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (isRefreshing) "Sincronizando" else "API Ao Vivo",
+                            text = if (isRefreshing) "Atualizando…" else "Atualizar",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
@@ -387,6 +504,12 @@ private fun PublicSafetyApisLiveBanner(
                     }
                 }
             }
+
+            Text(
+                text = "Estimativa do app com o tempo medido agora (Open-Meteo). Não substitui os alertas da Defesa Civil.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -403,7 +526,7 @@ private fun PublicSafetyApisLiveBanner(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${district.dpName} • ${district.militaryBattalion}",
+                        text = "Atualizado às ${weather.lastUpdatedTime}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -672,53 +795,28 @@ private fun IncidentStatusFeedbackBar(
     status: IncidentStatus,
     authority: String
 ) {
-    val statusColor = when (status) {
-        IncidentStatus.REPORTADO -> BrandOrange
-        IncidentStatus.EM_ATENDIMENTO -> BrandBlueHero
-        IncidentStatus.CONTROLADO -> CitizenStatusColors.safe
-    }
-
+    // Ninguém atualiza o andamento dos relatos: mostramos só a origem e o aviso de que não vai à polícia.
+    val statusColor = BrandOrange
     Surface(
         shape = RoundedCornerShape(9.dp),
         color = statusColor.copy(alpha = 0.10f),
         border = BorderStroke(1.dp, statusColor.copy(alpha = 0.30f)),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "STATUS: ${status.label.uppercase()}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = statusColor,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    text = authority,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = statusColor.copy(alpha = 0.16f)
-            ) {
-                Text(
-                    text = "Etapa ${status.stepIndex}/3",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = statusColor,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-            }
+        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+            Text(
+                text = "RELATADO POR MORADOR",
+                style = MaterialTheme.typography.labelSmall,
+                color = statusColor,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                text = authority.ifBlank { "Não é enviado à polícia. Em perigo, ligue 190." },
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -729,8 +827,32 @@ private fun IncidentDetailBottomSheet(
     incident: IncidentAlert,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
+    actionMessage: String?,
+    onReport: (ReportReason, String, () -> Unit) -> Unit,
+    onBlockAuthor: () -> Unit,
     onSosClick: () -> Unit
 ) {
+    var showReportDialog by remember { mutableStateOf(false) }
+    var showBlockDialog by remember { mutableStateOf(false) }
+    if (showReportDialog) {
+        ReportIncidentDialog(
+            onDismiss = { showReportDialog = false },
+            onSubmit = { reason, details -> onReport(reason, details) { showReportDialog = false } }
+        )
+    }
+    if (showBlockDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showBlockDialog = false },
+            title = { Text("Bloquear quem publicou?") },
+            text = { Text("Você deixa de ver todos os relatos desta pessoa. Ela não fica sabendo.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { showBlockDialog = false; onBlockAuthor() }) { Text("Bloquear") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showBlockDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -804,7 +926,7 @@ private fun IncidentDetailBottomSheet(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Recomendação Preventiva (Google Cloud Gemini IA)",
+                        text = "Dica de segurança",
                             style = MaterialTheme.typography.labelLarge,
                             color = CitizenStatusColors.insight,
                             fontWeight = FontWeight.Bold
@@ -816,6 +938,26 @@ private fun IncidentDetailBottomSheet(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
+                }
+            }
+
+            if (incident.media.isNotEmpty()) {
+                Text(
+                    text = "Fotos e vídeos (${incident.media.size})",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                var viewerIndex by remember { mutableStateOf<Int?>(null) }
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    incident.media.forEachIndexed { index, media ->
+                        RemoteMediaTile(url = media.url, isVideo = media.isVideo, size = 110.dp) { viewerIndex = index }
+                    }
+                }
+                viewerIndex?.let { start ->
+                    IncidentMediaViewer(media = incident.media, startIndex = start) { viewerIndex = null }
                 }
             }
 
@@ -834,7 +976,7 @@ private fun IncidentDetailBottomSheet(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Confirmar (${incident.confirmations})")
+                    Text(if (incident.userConfirmed) "Você confirmou (${incident.confirmations})" else "Eu também vi (${incident.confirmations})")
                 }
 
                 Button(
@@ -854,6 +996,54 @@ private fun IncidentDetailBottomSheet(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Acionar SOS", fontWeight = FontWeight.Bold)
                 }
+            }
+
+            actionMessage?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                androidx.compose.material3.TextButton(onClick = { showReportDialog = true }) {
+                    Text("Denunciar relato", color = MaterialTheme.colorScheme.error)
+                }
+                androidx.compose.material3.TextButton(onClick = { showBlockDialog = true }) {
+                    Text("Bloquear quem publicou", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeatherUnavailableCard(isRefreshing: Boolean, onRefresh: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = CitizenIcons.Storm,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = if (isRefreshing) "Consultando o clima…" else "Clima indisponível agora.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
+            )
+            if (!isRefreshing) {
+                androidx.compose.material3.TextButton(onClick = onRefresh) { Text("Tentar de novo") }
             }
         }
     }

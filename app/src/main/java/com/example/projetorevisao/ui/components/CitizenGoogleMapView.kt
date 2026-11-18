@@ -57,7 +57,9 @@ import com.example.projetorevisao.ui.theme.BrandBlue
 import com.example.projetorevisao.ui.theme.BrandBlueHero
 import com.example.projetorevisao.ui.theme.BrandNavyDark
 import com.example.projetorevisao.ui.theme.BrandOrange
+import com.example.projetorevisao.data.location.hasLocationPermission
 import com.example.projetorevisao.ui.viewmodel.IncidentAlert
+import androidx.compose.ui.platform.LocalContext
 import com.example.projetorevisao.ui.viewmodel.IncidentCategory
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -70,7 +72,6 @@ import com.google.maps.android.compose.MapType
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlin.math.roundToInt
 
@@ -100,11 +101,14 @@ fun CitizenInteractiveMapContainer(
     neighborhood: String,
     incidents: List<IncidentAlert>,
     showHeatmap: Boolean,
-    smartSampaCameras: Int,
     onToggleHeatmap: () -> Unit,
     onPinClick: (IncidentAlert) -> Unit,
-    onReportClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onCenterOnUser: () -> Unit,
+    modifier: Modifier = Modifier,
+    userLatitude: Double? = null,
+    userLongitude: Double? = null,
+    userAreaLabel: String? = null,
+    userLocationVersion: Int = 0
 ) {
     val isPreview = LocalInspectionMode.current
     val hasGoogleMapsKey = BuildConfig.MAPS_API_KEY.isNotBlank() &&
@@ -113,12 +117,7 @@ fun CitizenInteractiveMapContainer(
     var preferCartographicCanvas by remember { mutableStateOf(false) }
 
     // Filter pins for the active neighborhood so pins are clean and well-spaced
-    val mapIncidents = remember(incidents, neighborhood) {
-        val regional = incidents.filter {
-            it.neighborhood.equals(neighborhood, ignoreCase = true)
-        }
-        regional.ifEmpty { incidents.take(5) }
-    }
+    val mapIncidents = remember(incidents) { incidents.take(100) }
 
     Card(
         modifier = modifier,
@@ -133,7 +132,9 @@ fun CitizenInteractiveMapContainer(
                         neighborhood = neighborhood,
                         incidents = mapIncidents,
                         showHeatmap = showHeatmap,
-                        onPinClick = onPinClick
+                        onPinClick = onPinClick,
+                        userLatLng = if (userLatitude != null && userLongitude != null) LatLng(userLatitude, userLongitude) else null,
+                        userLocationVersion = userLocationVersion
                     )
                 }
                 !isPreview && !preferCartographicCanvas -> {
@@ -153,36 +154,6 @@ fun CitizenInteractiveMapContainer(
                         incidents = mapIncidents,
                         showHeatmap = showHeatmap,
                         onPinClick = onPinClick
-                    )
-                }
-            }
-
-            // Top-left Live Radar & Smart Sampa Badge
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = Color(0xFF0B1528).copy(alpha = 0.86f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f)),
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(10.dp)
-                    .clickable { preferCartographicCanvas = !preferCartographicCanvas }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF10B981))
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Google Maps SP • $smartSampaCameras câmeras Smart Sampa",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
-                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
@@ -218,7 +189,7 @@ fun CitizenInteractiveMapContainer(
                     shadowElevation = 4.dp,
                     modifier = Modifier
                         .size(36.dp)
-                        .clickable(onClick = onReportClick)
+                        .clickable(onClickLabel = "Centralizar na minha localização", onClick = onCenterOnUser)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -252,7 +223,7 @@ fun CitizenInteractiveMapContainer(
                     )
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = neighborhood,
+                        text = userAreaLabel ?: neighborhood,
                         style = MaterialTheme.typography.labelMedium,
                         color = BrandNavyDark,
                         fontWeight = FontWeight.Bold
@@ -268,16 +239,21 @@ private fun NativeGoogleMapsSdkView(
     neighborhood: String,
     incidents: List<IncidentAlert>,
     showHeatmap: Boolean,
-    onPinClick: (IncidentAlert) -> Unit
+    onPinClick: (IncidentAlert) -> Unit,
+    userLatLng: LatLng?,
+    userLocationVersion: Int
 ) {
-    val targetLatLng = centerLatLngForNeighborhood(neighborhood)
+    // Com GPS, o mapa centraliza no usuário; sem GPS, no bairro escolhido.
+    val targetLatLng = userLatLng ?: centerLatLngForNeighborhood(neighborhood)
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(targetLatLng, 14.5f)
+        position = CameraPosition.fromLatLngZoom(targetLatLng, 15f)
     }
+    val context = LocalContext.current
+    val showMyLocationDot = context.hasLocationPermission()
 
-    LaunchedEffect(neighborhood) {
+    LaunchedEffect(neighborhood, userLocationVersion) {
         cameraPositionState.animate(
-            update = CameraUpdateFactory.newLatLngZoom(targetLatLng, 14.5f),
+            update = CameraUpdateFactory.newLatLngZoom(targetLatLng, 15f),
             durationMs = 700
         )
     }
@@ -288,7 +264,8 @@ private fun NativeGoogleMapsSdkView(
         properties = MapProperties(
             mapType = MapType.NORMAL,
             isTrafficEnabled = true,
-            isBuildingEnabled = true
+            isBuildingEnabled = true,
+            isMyLocationEnabled = showMyLocationDot
         ),
         uiSettings = MapUiSettings(
             zoomControlsEnabled = false,
@@ -297,16 +274,6 @@ private fun NativeGoogleMapsSdkView(
             compassEnabled = true
         )
     ) {
-        Polyline(
-            points = listOf(
-                LatLng(-23.6593, -46.7678),
-                LatLng(-23.6490, -46.7580),
-                LatLng(-23.6405, -46.7485)
-            ),
-            color = Color(0xFF9B3894),
-            width = 10f
-        )
-
         incidents.forEach { alert ->
             val pos = LatLng(alert.latitude, alert.longitude)
 

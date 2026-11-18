@@ -23,4 +23,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "ProjetoMobileRedeCidada"
-include(":app")
+include(":app", ":server")

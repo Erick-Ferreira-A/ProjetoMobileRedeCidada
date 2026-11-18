@@ -30,7 +30,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,12 +58,16 @@ import com.example.projetorevisao.ui.theme.BrandBlue
 import com.example.projetorevisao.ui.theme.BrandOrange
 import com.example.projetorevisao.ui.theme.CitizenSPTheme
 import com.example.projetorevisao.ui.theme.CitizenStatusColors
+import com.example.projetorevisao.ui.viewmodel.AuthViewModel
 import com.example.projetorevisao.ui.viewmodel.CitizenViewModel
 import com.example.projetorevisao.ui.viewmodel.rememberCitizenViewModel
 
 @Composable
 fun CitizenProfileScreen(
-    viewModel: CitizenViewModel = rememberCitizenViewModel()
+    viewModel: CitizenViewModel = rememberCitizenViewModel(),
+    authViewModel: AuthViewModel = remember { AuthViewModel() },
+    onRequestLogin: () -> Unit = {},
+    onLoggedOut: () -> Unit = {}
 ) {
     LazyColumn(
         modifier = Modifier
@@ -59,7 +76,7 @@ fun CitizenProfileScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // User Identity & Trust Score Card (Figma UX Slide 6: Score de Reputação)
+        // Identificação do usuário
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -79,65 +96,31 @@ fun CitizenProfileScreen(
                         RedeCidadaLogo(size = 56.dp)
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "Cidadão Verificado SP",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = FontWeight.ExtraBold
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Icon(
-                                    imageVector = CitizenIcons.VerifiedCheck,
-                                    contentDescription = "Verificado",
-                                    tint = CitizenStatusColors.safe,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
                             Text(
-                                text = "Região base: ${viewModel.selectedNeighborhood}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                            Text(
-                                text = "Score de Confiabilidade Comunitária",
-                                style = MaterialTheme.typography.labelLarge,
+                                text = viewModel.currentUserName?.ifBlank { null } ?: "Visitante",
+                                style = MaterialTheme.typography.titleLarge,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "Prioriza seus relatos na triagem IA e combate fake news",
+                                text = viewModel.currentUserEmail ?: "Entre para enviar relatos e avisar seus guardiões",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = CitizenStatusColors.verifiedBadgeBg
-                        ) {
-                            Text(
-                                text = "${viewModel.userTrustScore} pts",
-                                maxLines = 1,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = CitizenStatusColors.safe,
-                                fontWeight = FontWeight.ExtraBold,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                            )
-                        }
                     }
+
                 }
             }
+        }
+
+        item {
+            AccountSection(
+                isLoggedIn = viewModel.isLoggedIn,
+                authViewModel = authViewModel,
+                onRequestLogin = onRequestLogin,
+                onLoggedOut = onLoggedOut
+            )
         }
 
         // Privacy, Anonymity & Geofence Preferences
@@ -155,12 +138,11 @@ fun CitizenProfileScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Privacidade & Geofence de Alertas",
+                        text = "Preferências",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
                     )
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -179,13 +161,13 @@ fun CitizenProfileScreen(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "Anonimato por Padrão ao Reportar",
+                                    text = "Relatar como anônimo",
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "Oculta nome, foto de perfil e metadados EXIF automaticamente",
+                                    text = "Já vem marcado ao criar um relato. Seu nome não aparece para outras pessoas.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -201,37 +183,6 @@ fun CitizenProfileScreen(
                         )
                     }
 
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Raio de Notificações Críticas (Geofence)",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "${String.format("%.1f", viewModel.geofenceRadiusKm)} km",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = BrandOrange,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
-                        Slider(
-                            value = viewModel.geofenceRadiusKm,
-                            onValueChange = { viewModel.updateGeofenceRadius(it) },
-                            valueRange = 0.5f..5.0f,
-                            steps = 8,
-                            colors = SliderDefaults.colors(
-                                thumbColor = BrandOrange,
-                                activeTrackColor = BrandOrange
-                            )
-                        )
-                    }
                 }
             }
         }
@@ -253,13 +204,13 @@ fun CitizenProfileScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
-                            text = "Ecossistema de APIs Conectadas",
+                            text = "Fontes de dados",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.ExtraBold
                         )
                         Text(
-                            text = "Segurança Pública SP, Metrô SP, Meteorologia e Google Cloud",
+                            text = "De onde vêm as informações mostradas no app.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -313,21 +264,6 @@ private fun ConnectedApiStatusCard(api: ExternalApiConnectionStatus) {
                     )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(CitizenStatusColors.safe)
-                    )
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = "ONLINE • ${api.latencyMs}ms",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = CitizenStatusColors.safe,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
             }
 
             Text(
@@ -338,7 +274,7 @@ private fun ConnectedApiStatusCard(api: ExternalApiConnectionStatus) {
             )
 
             Text(
-                text = "${api.provider} • ${api.endpointSummary}",
+                text = api.provider,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold
@@ -350,6 +286,99 @@ private fun ConnectedApiStatusCard(api: ExternalApiConnectionStatus) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun AccountSection(
+    isLoggedIn: Boolean,
+    authViewModel: AuthViewModel,
+    onRequestLogin: () -> Unit,
+    onLoggedOut: () -> Unit
+) {
+    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                text = "Conta",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.ExtraBold
+            )
+            if (!isLoggedIn) {
+                Text(
+                    text = "Você está usando o app sem conta.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Button(
+                    onClick = onRequestLogin,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
+                ) { Text("Entrar ou criar conta", fontWeight = FontWeight.Bold) }
+            } else {
+                OutlinedButton(
+                    onClick = { authViewModel.logout(onLoggedOut) },
+                    enabled = !authViewModel.isLoading,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                ) { Text("Sair da conta") }
+                TextButton(
+                    onClick = { authViewModel.clearError(); showDeleteDialog = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Excluir minha conta", color = CitizenStatusColors.critical, fontWeight = FontWeight.Bold) }
+            }
+        }
+    }
+
+    if (showDeleteDialog) {
+        var password by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { if (!authViewModel.isLoading) showDeleteDialog = false },
+            title = { Text("Excluir conta?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Sua conta, seus guardiões e seus alertas SOS serão apagados do servidor. Isso não pode ser desfeito. " +
+                            "Relatos que você já publicou continuam visíveis, sem seu nome."
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Digite sua senha") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true
+                    )
+                    authViewModel.errorMessage?.let {
+                        Text(it, color = CitizenStatusColors.critical, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !authViewModel.isLoading && password.isNotEmpty(),
+                    onClick = {
+                        authViewModel.deleteAccount(password) {
+                            showDeleteDialog = false
+                            onLoggedOut()
+                        }
+                    }
+                ) {
+                    Text(
+                        if (authViewModel.isLoading) "Excluindo…" else "Excluir definitivamente",
+                        color = CitizenStatusColors.critical
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(enabled = !authViewModel.isLoading, onClick = { showDeleteDialog = false }) { Text("Cancelar") }
+            }
+        )
     }
 }
 

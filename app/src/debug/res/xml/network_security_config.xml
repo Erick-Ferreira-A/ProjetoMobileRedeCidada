@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Somente no build debug: permite HTTP para testar com o servidor rodando no PC (emulador ou mesma rede Wi-Fi). -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
