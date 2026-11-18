@@ -29,11 +29,12 @@ Legenda: **👤 Você** · **🤖 Claude** · **👥 Juntos**
 ## Etapa 2 — Servidor na internet
 - [x] 👤 Criar conta na hospedagem (Railway, teste de 30 dias / US$ 5 até ~18/12)
 - [x] 🤖 Preparar o servidor para produção (`server/Dockerfile` + `railway.json`; testado em modo produção com ~160 MB)
-- [ ] 🤖 Variáveis: `APP_ENV=production`, `JWT_SECRET` (32+ caracteres), `SEED_DEMO_DATA=false`, `SPTRANS_TOKEN`, `ARTESP_API_KEY`, `ADMIN_TOKEN` (24+ caracteres)
-- [ ] 🤖 Disco persistente para o banco SQLite e a pasta de fotos/vídeos
+- [x] 🤖 Variáveis: `APP_ENV=production`, `JWT_SECRET` (32+ caracteres), `SEED_DEMO_DATA=false`, `SPTRANS_TOKEN`, `ARTESP_API_KEY`, `ADMIN_TOKEN` (24+ caracteres)
+- [x] 🤖 Disco persistente para o banco SQLite e a pasta de fotos/vídeos (volume em `/data`)
 - [ ] 🤖 Backup automático do banco
-- [ ] 🤖 HTTPS funcionando, testado do celular pela rede 4G
-- [ ] 🤖 App apontando para o endereço de produção (`BACKEND_URL` do release)
+- [x] 🤖 HTTPS funcionando: https://projetomobileredecidada-production.up.railway.app (testado; falta testar do celular no 4G)
+- [ ] 👥 ARTESP não aceita conexão do servidor nos EUA (provável bloqueio fora do Brasil) — status dos trilhos indisponível em produção
+- [x] 🤖 App apontando para o endereço de produção (`BACKEND_URL` em `local.properties`; APK de teste testado contra o Railway)
 - [x] 🤖 HTTP sem criptografia só na versão debug
 - [x] 🤖 IP real do usuário atrás do proxy do Railway (`TRUST_PROXY`), para o limite de login valer por pessoa
 - [ ] 👤 Assinar o plano Hobby antes de ~18/12 (fim do teste do Railway)

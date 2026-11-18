@@ -32,7 +32,9 @@ class TransitServiceTest {
 
     @Test
     fun withoutKeysServicesReportNotConfigured() = runBlocking {
-        val service = TransitService(MockEngine { error("não deveria chamar a rede") }, sptransToken = null, artespKey = null)
+        val service = TransitService(
+            MockEngine { error("não deveria chamar a rede") }, sptransToken = null, artespKey = null, artespRelayUrl = null
+        )
         assertTrue(service.railStatus() is TransitResult.NotConfigured)
         assertTrue(service.searchBusLines("8000") is TransitResult.NotConfigured)
     }
@@ -61,6 +63,22 @@ class TransitServiceTest {
         clock += 5 * 60 * 1000L + 1
         service.railStatus()
         assertEquals(2, calls)
+    }
+
+    @Test
+    fun railStatusGoesThroughRelayWhenConfigured() = runBlocking {
+        val engine = MockEngine { request ->
+            assertEquals("relay.exemplo.com", request.url.host)
+            assertEquals("segredo-do-relay", request.headers["X-Relay-Token"])
+            assertNull(request.headers[HttpHeaders.Authorization]) // a chave da ARTESP fica só no intermediário
+            respond(railJson, HttpStatusCode.OK, jsonHeaders)
+        }
+        val service = TransitService(
+            engine, sptransToken = null, artespKey = null,
+            artespRelayUrl = "https://relay.exemplo.com/api/status", artespRelayToken = "segredo-do-relay"
+        )
+        val result = service.railStatus() as TransitResult.Ok
+        assertEquals(3, result.data.lines.size)
     }
 
     @Test

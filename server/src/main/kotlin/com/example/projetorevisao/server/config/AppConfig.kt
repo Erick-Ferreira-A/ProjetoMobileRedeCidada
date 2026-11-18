@@ -72,6 +72,14 @@ object AppConfig {
     val sptransToken: String? = env("SPTRANS_TOKEN")
     val artespApiKey: String? = env("ARTESP_API_KEY")
 
+    /**
+     * Intermediário no Brasil para a API Trilhos (a ARTESP não aceita conexões do servidor nos EUA).
+     * Com ARTESP_RELAY_URL, o servidor pede o status ao intermediário (que guarda a chave da ARTESP)
+     * e se identifica com o cabeçalho X-Relay-Token = ARTESP_RELAY_TOKEN.
+     */
+    val artespRelayUrl: String? = env("ARTESP_RELAY_URL")
+    val artespRelayToken: String? = env("ARTESP_RELAY_TOKEN")
+
     val jwtSecret: String = resolveJwtSecret()
 
     private fun resolveJwtSecret(): String {
