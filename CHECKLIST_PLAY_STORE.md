@@ -33,26 +33,28 @@ Legenda: **👤 Você** · **🤖 Claude** · **👥 Juntos**
 - [x] 🤖 Disco persistente para o banco SQLite e a pasta de fotos/vídeos (volume em `/data`)
 - [ ] 🤖 Backup automático do banco
 - [x] 🤖 HTTPS funcionando: https://projetomobileredecidada-production.up.railway.app (testado; falta testar do celular no 4G)
-- [ ] 👥 ARTESP não aceita conexão do servidor nos EUA (provável bloqueio fora do Brasil) — status dos trilhos indisponível em produção
+- [x] 👥 ARTESP não aceita conexão do servidor nos EUA → resolvido com intermediário na Vercel em São Paulo (`relay-artesp/`, repo privado `joaofredericotech/rede-cidada-relay-artesp`)
+- [ ] 👤 Mandar o e-mail à ARTESP perguntando se liberam o servidor (texto pronto na conversa)
 - [x] 🤖 App apontando para o endereço de produção (`BACKEND_URL` em `local.properties`; APK de teste testado contra o Railway)
 - [x] 🤖 HTTP sem criptografia só na versão debug
 - [x] 🤖 IP real do usuário atrás do proxy do Railway (`TRUST_PROXY`), para o limite de login valer por pessoa
 - [ ] 👤 Assinar o plano Hobby antes de ~18/12 (fim do teste do Railway)
 
 ## Etapa 3 — Versão de release (.aab)
-- [ ] 👤 Criar a keystore de upload e guardar arquivo + senha em 2 lugares seguros
-- [ ] 👤 Criar `keystore.properties` (nunca vai para o Git)
-- [ ] 🤖 Minificação (R8) + regras para Ktor/Room, testando se nada quebrou
-- [ ] 🤖 `versionCode = 1`, `versionName = 1.0.0`
-- [ ] 🤖 Gerar o `.aab` assinado
+- [x] 👤 Criar a keystore de upload (`C:/Users/death/chaves-redecidada/upload-keystore.jks`)
+- [ ] 👤 Guardar a senha no gerenciador de senhas e fazer cópia do `.jks` fora do PC
+- [x] 👤 Criar `keystore.properties` (nunca vai para o Git)
+- [x] 🤖 Minificação (R8) + regras para Ktor/Room (APK de 15 MB → 2 MB; testado no emulador: início, mobilidade, login, SOS, perfil)
+- [x] 🤖 `versionCode = 1`, `versionName = 1.0`
+- [x] 🤖 Gerar o `.aab` assinado (`app/build/outputs/bundle/release/app-release.aab`; SHA-1 da chave de upload 90:C3:D0:BD:C5:8B:9F:EA:0E:74:85:0C:FB:29:DC:A1:0F:2A:E9:D2)
 - [ ] 👥 Instalar a release no celular e testar tudo de novo
 - [ ] 👤 Restringir a chave do Google Maps (só Android, pacote `br.com.redecidada.app`, SHA-1 de upload e da assinatura do Google)
 
 ## Etapa 4 — Páginas obrigatórias (link público)
-- [ ] 🤖 Política de privacidade
-- [ ] 🤖 Página web de exclusão de conta
-- [ ] 🤖 Termos de uso (regras de conteúdo; o app não substitui o 190)
-- [ ] 👥 Publicar as 3 páginas (GitHub Pages ou o próprio servidor)
+- [x] 🤖 Política de privacidade (`https://projetomobileredecidada-production.up.railway.app/privacidade`)
+- [x] 🤖 Página web de exclusão de conta, com formulário e opção por e-mail (`https://projetomobileredecidada-production.up.railway.app/excluir-conta`)
+- [x] 🤖 Termos de uso (regras de conteúdo; o app não substitui o 190) (`https://projetomobileredecidada-production.up.railway.app/termos`); links no cadastro e no perfil
+- [ ] 👥 Publicar as 3 páginas pelo próprio servidor: mesclar o PR e fazer o deploy manual no Railway
 
 ## Etapa 5 — Play Console (configuração)
 - [ ] 👤 Verificação de identidade da conta de desenvolvedor concluída

@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import com.example.projetorevisao.ui.components.LegalLinks
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -202,6 +203,7 @@ fun CitizenLoginScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
+                    LegalLinks()
                 }
 
                 authViewModel.errorMessage?.let { message ->

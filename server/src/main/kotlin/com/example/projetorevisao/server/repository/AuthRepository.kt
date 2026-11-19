@@ -186,6 +186,13 @@ class AuthRepository {
     }
 
     /** Encerra todas as sessões do usuário (ex.: "sair de todos os aparelhos"). */
+    /** Exclusão pela página web: identifica a conta pelo e-mail e exige a senha. */
+    fun deleteAccountByEmail(rawEmail: String, password: String): Boolean {
+        val email = Validators.normalizeEmail(rawEmail)
+        val userId = DatabaseFactory.getConnection().use { conn -> findUserByEmail(conn, email)?.id } ?: return false
+        return deleteAccount(userId, password)
+    }
+
     fun logoutAll(userId: String) {
         DatabaseFactory.getConnection().use { conn -> revokeAll(conn, userId) }
     }

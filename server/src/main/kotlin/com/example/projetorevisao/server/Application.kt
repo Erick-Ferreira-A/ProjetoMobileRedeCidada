@@ -133,6 +133,7 @@ fun Application.module(transitService: TransitService = TransitService()) {
 
     routing {
         authRoutes(repository, authRepository)
+        legalRoutes(authRepository)
         incidentRoutes(repository, mediaRepository, moderationRepository)
         adminRoutes(moderationRepository)
         telemetryRoutes(repository)
