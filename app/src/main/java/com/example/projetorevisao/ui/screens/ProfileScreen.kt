@@ -53,6 +53,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.projetorevisao.data.remote.ExternalApiConnectionStatus
 import com.example.projetorevisao.ui.components.CitizenIcons
+import com.example.projetorevisao.ui.components.LegalLinks
 import com.example.projetorevisao.ui.components.RedeCidadaLogo
 import com.example.projetorevisao.ui.theme.BrandBlue
 import com.example.projetorevisao.ui.theme.BrandOrange
@@ -333,6 +334,7 @@ private fun AccountSection(
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Excluir minha conta", color = CitizenStatusColors.critical, fontWeight = FontWeight.Bold) }
             }
+            LegalLinks(showDeletion = isLoggedIn)
         }
     }
 

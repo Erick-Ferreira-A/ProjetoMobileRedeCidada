@@ -67,8 +67,13 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.findByName("release")
+            // R8: encolhe e ofusca o código da versão de loja. As regras próprias ficam em proguard-rules.pro.
             optimization {
-                enable = false
+                enable = true
+                keepRules {
+                    includeDefault = true
+                    files.add(file("proguard-rules.pro"))
+                }
             }
         }
     }

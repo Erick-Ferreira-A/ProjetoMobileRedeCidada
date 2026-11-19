@@ -281,6 +281,41 @@ class ServerApiTest {
         assertEquals(HttpStatusCode.NotFound, client.get("/api/v1/auth/me") { bearerAuth(token) }.status)
     }
 
+    @Test
+    fun legalPagesArePublicHtml() = testApplication {
+        application { module() }
+        for ((path, text) in listOf(
+            "/privacidade" to "Política de privacidade",
+            "/termos" to "não substitui os serviços de emergência",
+            "/excluir-conta" to "Excluir conta do Rede Cidadã"
+        )) {
+            val response = client.get(path)
+            assertEquals(path, HttpStatusCode.OK, response.status)
+            assertTrue(path, response.headers[HttpHeaders.ContentType]!!.startsWith("text/html"))
+            val body = response.bodyAsText()
+            assertTrue(path, body.contains(text))
+            assertFalse(path, body.contains("{{FORM}}"))
+        }
+    }
+
+    @Test
+    fun deletionPageDeletesAccountWithEmailAndPassword() = testApplication {
+        application { module() }
+        val email = uniqueEmail()
+        client.registerNewUser(email)
+        suspend fun submit(password: String) = client.post("/excluir-conta") {
+            header("X-Forwarded-For", "203.0.113.77")
+            contentType(ContentType.Application.FormUrlEncoded)
+            setBody("email=${email.uppercase()}&password=$password")
+        }.bodyAsText()
+
+        assertTrue(submit("errada123").contains("E-mail ou senha incorretos"))
+        assertEquals(HttpStatusCode.OK, client.login(email = email, password = "senhaForte1").status)
+
+        assertTrue(submit("senhaForte1").contains("Conta excluída"))
+        assertEquals(HttpStatusCode.Unauthorized, client.login(email = email, password = "senhaForte1").status)
+    }
+
     private suspend fun HttpClient.uploadMedia(incidentId: String, token: String, bytes: ByteArray, mime: String) =
         submitFormWithBinaryData(
             url = "/api/v1/incidents/$incidentId/media",

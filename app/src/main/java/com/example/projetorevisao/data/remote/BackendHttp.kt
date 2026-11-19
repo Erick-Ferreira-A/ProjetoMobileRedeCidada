@@ -48,6 +48,9 @@ object BackendHttp {
 
     val baseUrl: String = BuildConfig.BACKEND_BASE_URL.trimEnd('/')
 
+    /** Raiz do servidor (sem /api/v1), onde ficam as páginas de privacidade, termos e exclusão de conta. */
+    val siteUrl: String = baseUrl.removeSuffix("/api/v1")
+
     private val client = HttpClient(Android) {
         expectSuccess = false
         install(HttpTimeout) {
