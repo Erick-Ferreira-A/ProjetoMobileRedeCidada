@@ -31,6 +31,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -275,7 +277,12 @@ private fun NativeGoogleMapsSdkView(
         )
     ) {
         incidents.forEach { alert ->
+          // key(id): ao filtrar a lista, cada pino mantém o próprio estado em vez de herdar o de outro alerta.
+          key(alert.id) {
             val pos = LatLng(alert.latitude, alert.longitude)
+            // Lembrado entre recomposições (antes era recriado a cada recomposição — lint UnrememberedMutableState).
+            val markerState = remember { MarkerState(position = pos) }
+            SideEffect { markerState.position = pos }
 
             if (showHeatmap) {
                 Circle(
@@ -288,7 +295,7 @@ private fun NativeGoogleMapsSdkView(
             }
 
             Marker(
-                state = MarkerState(position = pos),
+                state = markerState,
                 title = alert.title,
                 snippet = "${alert.effectiveBadgeTitle} • ${alert.distanceLabel}",
                 icon = BitmapDescriptorFactory.defaultMarker(markerHueForCategory(alert.category)),
@@ -297,6 +304,7 @@ private fun NativeGoogleMapsSdkView(
                     false
                 }
             )
+          }
         }
     }
 }
