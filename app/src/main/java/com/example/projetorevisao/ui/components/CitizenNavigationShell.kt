@@ -74,7 +74,7 @@ fun CitizenAppTopBar(
                 .padding(start = 8.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (currentScreen == "sos") {
+            if (currentScreen == "sos" || currentScreen == "profile/edit") {
                 IconButton(onClick = onBack) {
                     Icon(CitizenIcons.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.onSurface)
                 }
@@ -104,6 +104,7 @@ fun CitizenAppTopBar(
                             "reels" -> "Vídeos"
                             "sos" -> "Emergência"
                             "profile" -> "Perfil"
+                            "profile/edit" -> "Editar perfil"
                             else -> "Rede Cidadã"
                         },
                         style = MaterialTheme.typography.titleLarge,
@@ -113,7 +114,7 @@ fun CitizenAppTopBar(
                 }
             }
 
-            if (currentScreen != "sos") SosShieldButton(onClick = onSosClick)
+            if (currentScreen != "sos" && currentScreen != "profile/edit") SosShieldButton(onClick = onSosClick)
         }
     }
 }

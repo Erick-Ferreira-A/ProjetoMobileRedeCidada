@@ -165,3 +165,11 @@ object CitizenStatusColors {
         @Composable @ReadOnlyComposable
         get() = MaterialTheme.colorScheme.background == PaperBackground
 }
+
+/** Cor de função para usar sobre mídia/fundo preto (feed de Vídeos), igual nos dois temas. */
+fun DarkToneOnBlack(tone: RcTone): Color = when (tone) {
+    RcTone.CRITICAL -> DarkExtendedColors.critical
+    RcTone.WARNING -> DarkExtendedColors.warning
+    RcTone.SAFE -> DarkExtendedColors.safe
+    RcTone.INFO -> DarkExtendedColors.info
+}

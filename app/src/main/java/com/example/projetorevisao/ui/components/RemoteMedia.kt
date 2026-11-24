@@ -110,3 +110,32 @@ fun LocalMediaThumbnail(uri: Uri, isVideo: Boolean, size: Dp, modifier: Modifier
         }
     }
 }
+
+/**
+ * Foto do servidor em tamanho de tela (feed de Vídeos). Usa o mesmo cache das miniaturas, com
+ * resolução maior (até ~1600 px no lado maior).
+ */
+@Composable
+fun RemoteFullImage(url: String, modifier: Modifier = Modifier, contentScale: ContentScale = ContentScale.Crop) {
+    val cacheKey = "full:$url"
+    val bitmap by produceState(initialValue = imageCache.get(cacheKey), url) {
+        if (value != null) return@produceState
+        val bytes = BackendHttp.downloadBytes(url) ?: return@produceState
+        value = withContext(Dispatchers.Default) {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+            var sample = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 1600) sample *= 2
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
+                ?.asImageBitmap()
+        }?.also { imageCache.put(cacheKey, it) }
+    }
+    Box(modifier, contentAlignment = Alignment.Center) {
+        val image = bitmap
+        if (image != null) {
+            Image(image, contentDescription = "Foto do relato", contentScale = contentScale, modifier = Modifier.fillMaxSize())
+        } else {
+            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+        }
+    }
+}

@@ -1,6 +1,8 @@
 package com.example.projetorevisao.ui.screens
 
 import android.content.res.Configuration
+import com.example.projetorevisao.ui.designsystem.weatherKindOf
+import com.example.projetorevisao.ui.designsystem.RcWeatherGlyph
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
@@ -114,7 +116,7 @@ private val RadiusOptionsKm = listOf(1, 2, 5)
 private const val DefaultRadiusKm = 2
 
 /** Altura do painel recolhido: alça + resumo + clima. O resto da tela é mapa. */
-private val SheetPeekHeight = 116.dp
+private val SheetPeekHeight = 124.dp
 
 /**
  * Início (docs/design/TELAS.md §2.1, revisado em 23/11/2026 com o usuário).
@@ -189,31 +191,31 @@ fun CitizenHomeScreen(
                 contentPadding = PaddingValues(start = RcSpacing.md, end = RcSpacing.md, bottom = RcSpacing.xl),
                 verticalArrangement = Arrangement.spacedBy(RcSpacing.md)
             ) {
-                // Visível com o painel recolhido: resumo + clima pequeno.
+                // Visível com o painel recolhido: resumo e, logo abaixo, o clima com ícone.
                 item(key = "peek") {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                text = summary.text,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = summary.tone?.color ?: MaterialTheme.colorScheme.onSurface,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.semantics { heading(); liveRegion = LiveRegionMode.Polite }
-                            )
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = summary.text,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = summary.tone?.color ?: MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.semantics { heading(); liveRegion = LiveRegionMode.Polite }
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            WeatherLine(viewModel.weatherTelemetry, viewModel.isRefreshingApis)
                             Text(
                                 text = when (visibleAlerts.size) {
-                                    0 -> "Raio de $radiusKm km"
-                                    1 -> "1 relato em $radiusKm km"
-                                    else -> "${visibleAlerts.size} relatos em $radiusKm km"
+                                    0 -> "  ·  raio de $radiusKm km"
+                                    1 -> "  ·  1 relato em $radiusKm km"
+                                    else -> "  ·  ${visibleAlerts.size} relatos em $radiusKm km"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Spacer(Modifier.width(RcSpacing.sm))
-                        WeatherPill(viewModel.weatherTelemetry, viewModel.isRefreshingApis)
                     }
                 }
 
@@ -376,35 +378,33 @@ private fun MapOverlayButton(
     }
 }
 
-/** Rótulo curto da condição do tempo para caber no clima pequeno do Início. */
-internal fun shortCondition(label: String): String = when {
-    label.contains("Tempestade", ignoreCase = true) -> "Tempestade"
-    label.contains("Chuva", ignoreCase = true) -> "Chuva"
-    label.contains("Garoa", ignoreCase = true) -> "Garoa"
-    label.contains("Nublado", ignoreCase = true) -> "Nublado"
-    label.contains("Limpo", ignoreCase = true) -> "Céu limpo"
-    else -> label.substringBefore(" ")
-}
-
-/** Clima em uma linha, pequeno (o detalhe do tempo não é o foco do Início). */
+/** Clima numa linha: ícone + temperatura + condição (ensolarado, nublado, chuva, tempestade). */
 @Composable
-private fun WeatherPill(weather: WeatherSafetyTelemetry, refreshing: Boolean) {
-    val scheme = MaterialTheme.colorScheme
-    val text = when {
-        weather.conditionLabel.isNotBlank() -> "${weather.temperatureCelsius.roundToInt()}° ${shortCondition(weather.conditionLabel)}"
-        refreshing -> "Clima…"
-        else -> "Clima indisponível"
-    }
-    Surface(shape = CircleShape, color = scheme.surfaceContainerHigh, contentColor = scheme.onSurface) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            if (weather.isLiveNetworkData) {
-                Box(Modifier.size(8.dp).background(RcTone.SAFE.color, CircleShape))
+private fun WeatherLine(weather: WeatherSafetyTelemetry, refreshing: Boolean) {
+    val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.semantics(mergeDescendants = true) {}
+    ) {
+        if (weather.conditionLabel.isNotBlank()) {
+            val kind = weatherKindOf(weather.conditionLabel, hour)
+            RcWeatherGlyph(kind)
+            Text(
+                "${weather.temperatureCelsius.roundToInt()}° · ${kind.label}",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
+            )
+            if (!weather.isLiveNetworkData) {
+                Text("(${weather.lastUpdatedTime})", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Text(text, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+        } else {
+            Text(
+                if (refreshing) "Consultando o clima…" else "Clima indisponível",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

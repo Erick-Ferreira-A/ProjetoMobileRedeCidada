@@ -21,9 +21,15 @@ private val IncidentAlert.hasKnownDistance get() = distanceMeters > 0
 
 private fun IncidentAlert.isNearby() = !hasKnownDistance || distanceMeters <= NEARBY_METERS
 
-/** "Av. Carlos Caldeira Filho, 1200 - Capão Redondo" → "Av. Carlos Caldeira Filho". */
+/**
+ * Nome curto do lugar para frases e cards:
+ * "Av. Carlos Caldeira Filho, 1200 - Capão Redondo" → "Av. Carlos Caldeira Filho";
+ * "Próximo a Conjunto Habitacional X" → "Conjunto Habitacional X" (o endereço automático vem com esse prefixo).
+ */
 internal fun streetOf(address: String): String =
-    address.substringBefore(",").substringBefore(" - ").trim().ifBlank { "a região" }
+    address.substringBefore(",").substringBefore(" - ").trim()
+        .removePrefix("Próximo a ").removePrefix("Próximo ao ").removePrefix("Perto de ").trim()
+        .ifBlank { "a região" }
 
 fun homeSummary(
     alerts: List<IncidentAlert>,
@@ -36,7 +42,7 @@ fun homeSummary(
         .filter { it.category.tone == RcTone.CRITICAL && it.hasKnownDistance && it.distanceMeters <= CRITICAL_METERS }
         .minByOrNull { it.distanceMeters }
     if (critical != null) {
-        return HomeSummary("Evite ${streetOf(critical.address)} agora.", RcTone.CRITICAL)
+        return HomeSummary("Cuidado perto de ${streetOf(critical.address)} agora.", RcTone.CRITICAL)
     }
 
     val nearby = alerts.count { it.isNearby() }

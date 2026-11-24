@@ -75,7 +75,7 @@ Cada tela tem: **pergunta** que responde · **frase-resumo** (headline) · **ana
   2. **Mapa ocupando quase a tela toda** (entre cabeçalho e navegação), livre para navegar. Sem card, sem mancha de calor, sem rótulo de bairro duplicado.
   3. Sobre o mapa, no topo: **Filtros** (mostra quantos estão ativos: "Filtros · 2") e **busca**. Botão "Minha localização" no canto inferior direito, acima do painel.
   4. **Painel de baixo** (padrão Google Maps/Airbnb):
-     - Recolhido: frase-resumo (dinâmica, ver abaixo) + "N relatos em X km" + **clima pequeno** ("21° Nublado", com ponto verde quando ao vivo).
+     - Recolhido: frase-resumo (dinâmica) e, logo abaixo, o **clima com ícone** (ensolarado, céu limpo à noite, parcialmente nublado, nublado, garoa, chuva, tempestade) + "N relatos em X km".
      - Puxando para cima: aviso "Relatos de moradores…", cards de alerta por relevância e o fim da lista com "Aumentar o raio" / "Limpar filtro".
 - **Painel de Filtros** (sheet): "O que mostrar" com várias categorias ao mesmo tempo ("Tudo" limpa) + "Raio a partir de você" (1 · 2 · 5 km) + "Limpar" e "Mostrar N relatos" (conta antes de aplicar). Só aplica ao confirmar.
 - **Fora do Início:** cards grandes de clima e trilhos (trilhos ficam em Mobilidade), título grande, chips soltos na tela, alternância Lista | Mapa.
@@ -197,7 +197,11 @@ Referência: Reels/TikTok/Shorts, com o propósito trocado: **informar e não pr
 - **Estados:** sem guardiões (o botão continua funcionando para os números de emergência e pede "Adicione alguém de confiança") · sem conta (guardiões pedem login; os números de emergência funcionam sempre).
 - **Regra de teste:** nunca acionar SOS real, ligar para os números nem abrir WhatsApp com guardião real em teste.
 
-### 2.8 Perfil (`profile`)
+### 2.8 Perfil (`profile`) — implementado em 24/11/2026
+
+Implementação atual: cabeçalho com foto/iniciais, nome, idade, bairro e e-mail · "Editar perfil" (com conta) ou "Entrar ou criar conta" (visitante) · card **Sua confiabilidade** (score 0–1000, faixa, barra e "Como funciona"; cálculo automático em integração, hoje todos começam com 940) · Meus relatos, Guardiões, Avaliações · Preferências · Fontes de dados · Sair / Excluir conta. **Editar perfil** (`profile/edit`): foto, nome, nascimento (idade, 18+), telefone, endereço; salvo no aparelho até o servidor aceitar os campos. **Documentos (CPF/CNPJ, RG):** visíveis e desativados — dependem de atualizar a política de privacidade (hoje diz que o app não coleta documentos).
+
+Especificação original:
 
 - **Pergunta:** "Como estou usando o app e o que ele sabe de mim?"
 - **Anatomia:**

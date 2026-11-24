@@ -1,6 +1,11 @@
 package com.example.projetorevisao
 
 import android.os.Bundle
+import com.example.projetorevisao.ui.screens.EditProfileScreen
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -50,6 +55,8 @@ import com.example.projetorevisao.ui.screens.CitizenReelsScreen
 import com.example.projetorevisao.ui.screens.CitizenSosScreen
 import com.example.projetorevisao.ui.screens.ReportIncidentModalSheet
 import com.example.projetorevisao.ui.theme.CitizenSPTheme
+import com.example.projetorevisao.ui.theme.RcAppTheme
+import androidx.compose.foundation.isSystemInDarkTheme
 import com.example.projetorevisao.ui.viewmodel.AuthViewModel
 import com.example.projetorevisao.ui.viewmodel.TransitViewModel
 import com.example.projetorevisao.ui.viewmodel.CitizenViewModel
@@ -98,6 +105,8 @@ fun CitizenSPApp(
         val refreshUserLocation = rememberUserLocationSync(viewModel)
         val currentScreen = entry?.destination?.route ?: startDestination
         var showReportSheet by rememberSaveable { mutableStateOf(false) }
+        val snackbar = remember { SnackbarHostState() }
+        val scope = rememberCoroutineScope()
         val showNavigationShell = currentScreen !in setOf("onboarding", "login", "location")
         fun navigateTo(route: String) {
             navController.navigate(route) {
@@ -123,25 +132,32 @@ fun CitizenSPApp(
         val contentMaxWidth = if (maxWidth >= 1_000.dp) 840.dp else 720.dp
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+            snackbarHost = { SnackbarHost(snackbar) },
             topBar = {
-                if (showNavigationShell) {
+                // Vídeos é tela cheia (modelo Reels): sem barra superior, o SOS fica no próprio feed.
+                if (showNavigationShell && currentScreen != "reels") {
                     CitizenAppTopBar(
                         currentScreen = currentScreen,
                         areaLabel = viewModel.areaLabel,
-                        onBack = { navigateTo("home") },
+                        onBack = {
+                            if (currentScreen == "profile/edit") navController.popBackStack() else navigateTo("home")
+                        },
                         onSosClick = { navigateTo("sos") }
                     )
                 }
             },
             bottomBar = {
                 if (showNavigationShell) {
-                    CitizenBottomNavBar(
-                        currentScreen = currentScreen,
-                        onSelectScreen = { target ->
-                            navigateTo(target)
-                        },
-                        onOpenReportSheet = { showReportSheet = true }
-                    )
+                    // No feed de Vídeos a barra fica escura, como no Instagram/TikTok.
+                    RcAppTheme(darkTheme = currentScreen == "reels" || isSystemInDarkTheme()) {
+                        CitizenBottomNavBar(
+                            currentScreen = currentScreen,
+                            onSelectScreen = { target ->
+                                navigateTo(target)
+                            },
+                            onOpenReportSheet = { showReportSheet = true }
+                        )
+                    }
                 }
             }
         ) { innerPadding ->
@@ -191,7 +207,15 @@ fun CitizenSPApp(
                     }
                     composable("metro") { CitizenMetroScreen(viewModel, transitViewModel) }
                     composable("reels") {
-                        CitizenReelsScreen(viewModel, onOpenReportSheet = { showReportSheet = true })
+                        CitizenReelsScreen(
+                            viewModel,
+                            onOpenReportSheet = { showReportSheet = true },
+                            onOpenIncident = { incident ->
+                                viewModel.openIncidentDetail(incident)
+                                navigateTo("home")
+                            },
+                            onSosClick = { navigateTo("sos") }
+                        )
                     }
                     composable("sos") {
                         CitizenSosScreen(
@@ -205,7 +229,21 @@ fun CitizenSPApp(
                             viewModel,
                             authViewModel = authViewModel,
                             onRequestLogin = { navController.navigate("login") },
-                            onLoggedOut = { resetTo("login") }
+                            onLoggedOut = { resetTo("login") },
+                            onEditProfile = { navController.navigate("profile/edit") },
+                            onOpenGuardians = { navigateTo("sos") },
+                            onComingSoon = { what -> scope.launch { snackbar.showSnackbar("$what ainda está em integração. Em breve.") } }
+                        )
+                    }
+                    composable("profile/edit") {
+                        EditProfileScreen(
+                            accountName = viewModel.currentUserName,
+                            accountEmail = viewModel.currentUserEmail,
+                            onSaved = {
+                                navController.popBackStack()
+                                scope.launch { snackbar.showSnackbar("Perfil salvo neste aparelho.") }
+                            },
+                            onCancel = { navController.popBackStack() }
                         )
                     }
                 }

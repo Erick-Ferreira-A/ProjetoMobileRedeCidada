@@ -56,7 +56,7 @@ class HomeSummaryTest {
             listOf(alert("a", IncidentCategory.ROUBO_FURTO, 320, "Av. Carlos Caldeira Filho, 1200 - Capão Redondo")),
             emptyList(), loading = false
         )
-        assertEquals("Evite Av. Carlos Caldeira Filho agora.", s.text)
+        assertEquals("Cuidado perto de Av. Carlos Caldeira Filho agora.", s.text)
         assertEquals(RcTone.CRITICAL, s.tone)
     }
 
@@ -99,8 +99,19 @@ class HomeSummaryTest {
     }
 
     @Test
+    fun weatherKind_mapsServiceLabelsToHowPeopleSpeak() {
+        assertEquals(com.example.projetorevisao.ui.designsystem.RcWeatherKind.CLOUDY, com.example.projetorevisao.ui.designsystem.weatherKindOf("Nublado", 14))
+        assertEquals(com.example.projetorevisao.ui.designsystem.RcWeatherKind.PARTLY_CLOUDY, com.example.projetorevisao.ui.designsystem.weatherKindOf("Parcialmente Nublado", 14))
+        assertEquals(com.example.projetorevisao.ui.designsystem.RcWeatherKind.RAIN, com.example.projetorevisao.ui.designsystem.weatherKindOf("Pancadas de Chuva Forte", 14))
+        assertEquals(com.example.projetorevisao.ui.designsystem.RcWeatherKind.STORM, com.example.projetorevisao.ui.designsystem.weatherKindOf("Tempestade com Raios e Rajadas de Vento", 14))
+        assertEquals(com.example.projetorevisao.ui.designsystem.RcWeatherKind.SUNNY, com.example.projetorevisao.ui.designsystem.weatherKindOf("Céu Limpo", 13))
+        assertEquals(com.example.projetorevisao.ui.designsystem.RcWeatherKind.CLEAR_NIGHT, com.example.projetorevisao.ui.designsystem.weatherKindOf("Céu Limpo", 23))
+    }
+
+    @Test
     fun streetOf_handlesMissingSeparators() {
         assertEquals("Praça da Sé", streetOf("Praça da Sé"))
         assertEquals("a região", streetOf(""))
+        assertEquals("Conjunto Habitacional Instituto Adventista", streetOf("Próximo a Conjunto Habitacional Instituto Adventista"))
     }
 }
