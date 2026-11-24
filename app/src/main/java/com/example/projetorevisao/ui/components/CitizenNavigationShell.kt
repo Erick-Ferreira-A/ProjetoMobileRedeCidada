@@ -1,21 +1,23 @@
 package com.example.projetorevisao.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,265 +29,192 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.projetorevisao.ui.theme.BrandOrange
-import com.example.projetorevisao.ui.theme.CitizenStatusColors
+import com.example.projetorevisao.ui.theme.RcTheme
+import java.util.Calendar
 
+/** Destinos da barra inferior (TELAS §1). As rotas antigas foram mantidas para não quebrar o NavHost. */
+enum class MainTab(val route: String, val label: String, val icon: ImageVector) {
+    HOME("home", "Início", CitizenIcons.Home),
+    MOBILITY("metro", "Mobilidade", CitizenIcons.Train),
+    MEDIA("reels", "Vídeos", CitizenIcons.Reels),
+    PROFILE("profile", "Perfil", CitizenIcons.Person)
+}
+
+private fun greeting(): String = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
+    in 5..11 -> "Bom dia"
+    in 12..17 -> "Boa tarde"
+    else -> "Boa noite"
+}
+
+/**
+ * Barra superior (TELAS §1): contexto à esquerda e o escudo de SOS à direita, em todas as abas.
+ * No Início mostra saudação + área; nas outras abas, o nome da aba. Na tela de SOS vira "Voltar".
+ */
 @Composable
 fun CitizenAppTopBar(
     currentScreen: String,
-    onNavigateHome: () -> Unit = {},
-    onSosClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    areaLabel: String = "São Paulo",
+    onBack: () -> Unit = {},
+    onSosClick: () -> Unit = {}
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp,
-        shadowElevation = 2.dp
-    ) {
+    Surface(color = MaterialTheme.colorScheme.background) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .heightIn(min = 64.dp)
+                .padding(start = 8.dp, end = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                if (currentScreen == "profile") {
-                    IconButton(
-                        onClick = onNavigateHome,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = CitizenIcons.ArrowBack,
-                            contentDescription = "Voltar ao Início",
-                            tint = MaterialTheme.colorScheme.onSurface
+            if (currentScreen == "sos") {
+                IconButton(onClick = onBack) {
+                    Icon(CitizenIcons.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.onSurface)
+                }
+            } else {
+                Spacer(Modifier.width(8.dp))
+            }
+
+            Column(Modifier.weight(1f)) {
+                when (currentScreen) {
+                    "home" -> {
+                        Text(
+                            greeting(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            areaLabel,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
-                    Spacer(modifier = Modifier.width(6.dp))
-                } else {
-                    RedeCidadaLogo(size = 36.dp)
-                    Spacer(modifier = Modifier.width(10.dp))
-                }
-
-                Column {
-                    Text(
+                    else -> Text(
                         text = when (currentScreen) {
-                            "metro" -> "Mobilidade urbana"
-                            "reels" -> "Fotos e vídeos"
+                            "metro" -> "Mobilidade"
+                            "reels" -> "Vídeos"
                             "sos" -> "Emergência"
-                            "profile" -> "Minha conta"
+                            "profile" -> "Perfil"
                             else -> "Rede Cidadã"
                         },
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        text = when (currentScreen) {
-                            "metro" -> "Trilhos e ônibus em tempo real"
-                            "reels" -> "Enviados nos relatos da comunidade"
-                            "sos" -> "Ligue 190 ou avise seus guardiões"
-                            "profile" -> "Conta, guardiões e preferências"
-                            else -> "Segurança comunitária • São Paulo"
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.semantics { heading() }
                     )
                 }
             }
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Quick 190 SOS Pill
-                if (currentScreen != "sos") {
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = CitizenStatusColors.critical.copy(alpha = 0.14f),
-                        border = BorderStroke(1.dp, CitizenStatusColors.critical.copy(alpha = 0.4f)),
-                        modifier = Modifier.clickable(onClick = onSosClick)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = CitizenIcons.SosEmergency,
-                            contentDescription = "Abrir tela de emergência",
-                                tint = CitizenStatusColors.critical,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text(
-                                text = "SOS",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = CitizenStatusColors.critical,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
-                    }
-                }
-
-                // Profile Button
-                val isProfileSelected = currentScreen == "profile"
-                IconButton(
-                    onClick = if (isProfileSelected) onNavigateHome else onProfileClick,
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (isProfileSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.surfaceContainerHigh
-                            }
-                        )
-                ) {
-                    Icon(
-                        imageVector = CitizenIcons.Person,
-                        contentDescription = "Minha conta",
-                        tint = if (isProfileSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
+            if (currentScreen != "sos") SosShieldButton(onClick = onSosClick)
         }
     }
 }
 
+/** Escudo de SOS: pequeno, sempre no mesmo lugar, 48 dp de toque. O vermelho grande só dentro da tela. */
+@Composable
+private fun SosShieldButton(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = RcTheme.colors.criticalContainer,
+        contentColor = RcTheme.colors.critical,
+        modifier = Modifier
+            .heightIn(min = 48.dp)
+            .semantics {
+                role = Role.Button
+                contentDescription = "Emergência, abrir tela de SOS"
+            }
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(CitizenIcons.Shield, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text("SOS", style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+/**
+ * Barra inferior (TELAS §1): Início · Mobilidade · [Relatar] · Vídeos · Perfil.
+ * Rótulos sempre visíveis; Relatar no centro, no alcance do polegar (padrão Instagram/TikTok).
+ */
 @Composable
 fun CitizenBottomNavBar(
     currentScreen: String,
     onSelectScreen: (String) -> Unit,
     onOpenReportSheet: () -> Unit
 ) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 8.dp
+    Column {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        NavigationBar(
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp
+        ) {
+            TabItem(MainTab.HOME, currentScreen, onSelectScreen)
+            TabItem(MainTab.MOBILITY, currentScreen, onSelectScreen)
+            ReportAction(onOpenReportSheet)
+            TabItem(MainTab.MEDIA, currentScreen, onSelectScreen)
+            TabItem(MainTab.PROFILE, currentScreen, onSelectScreen)
+        }
+    }
+}
+
+@Composable
+private fun RowScope.TabItem(tab: MainTab, currentScreen: String, onSelect: (String) -> Unit) {
+    val selected = currentScreen == tab.route
+    NavigationBarItem(
+        selected = selected,
+        onClick = { onSelect(tab.route) },
+        icon = { Icon(tab.icon, contentDescription = null, modifier = Modifier.size(24.dp)) },
+        label = { Text(tab.label, style = MaterialTheme.typography.labelMedium, maxLines = 1) },
+        alwaysShowLabel = true,
+        colors = NavigationBarItemDefaults.colors(
+            selectedIconColor = MaterialTheme.colorScheme.onSurface,
+            selectedTextColor = MaterialTheme.colorScheme.onSurface,
+            indicatorColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    )
+}
+
+/** Ação central: não é uma aba, abre a sheet de relato. Laranja com ícone marinho (nunca branco). */
+@Composable
+private fun RowScope.ReportAction(onClick: () -> Unit) {
+    // A coluna inteira é o alvo de toque (maior que 48 dp), e as medidas do desenho repetem as das
+    // abas (indicador 56×32, 12 dp do topo, 4 dp até o rótulo) para o rótulo alinhar com os outros.
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .height(80.dp) // altura da NavigationBar do M3
+            .clickable(role = Role.Button, onClickLabel = "Relatar", onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = "Relatar o que está acontecendo" }
+            .padding(top = 10.5.dp), // medido no Pixel 8: alinha com o indicador das abas
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        NavigationBarItem(
-            selected = currentScreen == "home",
-            onClick = { onSelectScreen("home") },
-            icon = {
-                Icon(
-                    imageVector = CitizenIcons.Map,
-                    contentDescription = "Mapa & Feed",
-                    modifier = Modifier.size(22.dp)
-                )
-            },
-            label = { Text("Mapa & Feed", fontSize = 10.sp) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.primary,
-                selectedTextColor = MaterialTheme.colorScheme.primary,
-                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        )
-
-        NavigationBarItem(
-            selected = currentScreen == "metro",
-            onClick = { onSelectScreen("metro") },
-            icon = {
-                Icon(
-                    imageVector = CitizenIcons.Train,
-                    contentDescription = "Rotas & Metrô",
-                    modifier = Modifier.size(22.dp)
-                )
-            },
-            label = { Text("Mobilidade", fontSize = 10.sp) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.primary,
-                selectedTextColor = MaterialTheme.colorScheme.primary,
-                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        )
-
-        // Central Orange "+ Reportar" Action Button (Figma 192:400)
         Box(
             modifier = Modifier
-                .weight(1f)
-                .padding(top = 6.dp),
+                .size(width = 56.dp, height = 32.dp)
+                .background(RcTheme.colors.accent, MaterialTheme.shapes.medium),
             contentAlignment = Alignment.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable(onClick = onOpenReportSheet)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(BrandOrange),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = CitizenIcons.Add,
-                        contentDescription = "Reportar ocorrência",
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "Reportar",
-                    fontSize = 10.sp,
-                    color = BrandOrange,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            Icon(CitizenIcons.Add, contentDescription = null, tint = RcTheme.colors.onAccent, modifier = Modifier.size(24.dp))
         }
-
-        NavigationBarItem(
-            selected = currentScreen == "reels",
-            onClick = { onSelectScreen("reels") },
-            icon = {
-                Icon(
-                    imageVector = CitizenIcons.Reels,
-                    contentDescription = "Fotos e vídeos dos relatos",
-                    modifier = Modifier.size(22.dp)
-                )
-            },
-            label = { Text("Vídeos", fontSize = 10.sp) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.primary,
-                selectedTextColor = MaterialTheme.colorScheme.primary,
-                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        )
-
-        NavigationBarItem(
-            selected = currentScreen == "sos",
-            onClick = { onSelectScreen("sos") },
-            icon = {
-                Icon(
-                    imageVector = CitizenIcons.SosEmergency,
-                    contentDescription = "SOS Emergência",
-                    modifier = Modifier.size(22.dp)
-                )
-            },
-            label = { Text("SOS", fontSize = 10.sp) },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = CitizenStatusColors.critical,
-                selectedTextColor = CitizenStatusColors.critical,
-                indicatorColor = CitizenStatusColors.critical.copy(alpha = 0.18f),
-                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        Text(
+            "Relatar",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 4.dp)
         )
     }
 }

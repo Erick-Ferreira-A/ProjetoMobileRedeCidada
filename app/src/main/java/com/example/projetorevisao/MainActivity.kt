@@ -114,7 +114,8 @@ fun CitizenSPApp(
             }
         }
 
-        BackHandler(enabled = currentScreen == "sos" || currentScreen == "profile") {
+        // Voltar em qualquer aba (ou no SOS) leva ao Início; no Início, sai do app (TELAS §1).
+        BackHandler(enabled = currentScreen in setOf("metro", "reels", "sos", "profile")) {
             navController.popBackStack("home", inclusive = false)
         }
 
@@ -126,9 +127,9 @@ fun CitizenSPApp(
                 if (showNavigationShell) {
                     CitizenAppTopBar(
                         currentScreen = currentScreen,
-                        onNavigateHome = { navigateTo("home") },
-                        onSosClick = { navigateTo("sos") },
-                        onProfileClick = { navigateTo("profile") }
+                        areaLabel = viewModel.areaLabel,
+                        onBack = { navigateTo("home") },
+                        onSosClick = { navigateTo("sos") }
                     )
                 }
             },

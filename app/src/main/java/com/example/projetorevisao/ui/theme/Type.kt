@@ -1,22 +1,43 @@
 package com.example.projetorevisao.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import com.example.projetorevisao.R
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 /**
  * Tipografia "Calçada" (guia visual v1.0 §3).
  *
- * Títulos: Bricolage Grotesque · Texto: Atkinson Hyperlegible Next (ambas OFL, Google Fonts).
- * Enquanto os arquivos não estão em res/font, as duas famílias caem na fonte do sistema.
- * Para ativar: adicionar os .ttf em app/src/main/res/font e trocar as duas linhas abaixo por
- * FontFamily(Font(R.font.bricolage_grotesque, ...)) / FontFamily(Font(R.font.atkinson_hyperlegible_next, ...)).
+ * Títulos: Bricolage Grotesque · Texto: Atkinson Hyperlegible Next.
+ * Arquivos variáveis em res/font (google/fonts, OFL 1.1; licenças em assets/licenses).
+ * No Android 8+ cada peso usa o eixo `wght` da fonte variável; no 7.x (minSdk 24) o sistema
+ * usa a instância padrão e sintetiza o negrito.
  */
-val RcDisplayFamily: FontFamily = FontFamily.Default
-val RcTextFamily: FontFamily = FontFamily.Default
+@OptIn(ExperimentalTextApi::class)
+private fun variable(resId: Int, weight: FontWeight, vararg extra: FontVariation.Setting) = Font(
+    resId = resId,
+    weight = weight,
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight), *extra)
+)
+
+val RcDisplayFamily: FontFamily = FontFamily(
+    // opsz 24–36: o desenho de "títulos médios" da Bricolage, menos apertado que o de 96.
+    variable(R.font.bricolage_grotesque, FontWeight.SemiBold, FontVariation.Setting("opsz", 24f)),
+    variable(R.font.bricolage_grotesque, FontWeight.Bold, FontVariation.Setting("opsz", 24f)),
+    variable(R.font.bricolage_grotesque, FontWeight.ExtraBold, FontVariation.Setting("opsz", 36f))
+)
+
+val RcTextFamily: FontFamily = FontFamily(
+    variable(R.font.atkinson_hyperlegible_next, FontWeight.Normal),
+    variable(R.font.atkinson_hyperlegible_next, FontWeight.Medium),
+    variable(R.font.atkinson_hyperlegible_next, FontWeight.Bold)
+)
 
 private fun display(weight: FontWeight, size: Int, line: Int, tracking: Double = -0.01) = TextStyle(
     fontFamily = RcDisplayFamily, fontWeight = weight,
