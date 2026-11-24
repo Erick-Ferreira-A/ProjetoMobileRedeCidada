@@ -1,6 +1,8 @@
 package com.example.projetorevisao
 
 import android.os.Bundle
+import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.foundation.layout.WindowInsets
 import com.example.projetorevisao.ui.screens.EditProfileScreen
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -132,6 +134,8 @@ fun CitizenSPApp(
         val contentMaxWidth = if (maxWidth >= 1_000.dp) 840.dp else 720.dp
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+            // No onboarding o topo azul passa por trás da barra de status (o próprio topo aplica o espaço).
+            contentWindowInsets = if (currentScreen == "onboarding") WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
             snackbarHost = { SnackbarHost(snackbar) },
             topBar = {
                 // Vídeos é tela cheia (modelo Reels): sem barra superior, o SOS fica no próprio feed.

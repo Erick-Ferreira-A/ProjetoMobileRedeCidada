@@ -1,6 +1,13 @@
 package com.example.projetorevisao.ui.screens
 
 import android.content.res.Configuration
+import com.example.projetorevisao.ui.theme.BrandNavyDark
+import com.example.projetorevisao.ui.theme.BrandBlueHero
+import com.example.projetorevisao.ui.theme.BrandBlue
+import com.example.projetorevisao.ui.components.CitizenIcons
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -39,14 +46,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.projetorevisao.ui.components.RedeCidadaLogo
 import com.example.projetorevisao.ui.designsystem.RcAccentButton
-import com.example.projetorevisao.ui.designsystem.RcAlertCard
-import com.example.projetorevisao.ui.designsystem.RcEmergencyCallChip
 import com.example.projetorevisao.ui.designsystem.RcSource
 import com.example.projetorevisao.ui.designsystem.RcSourceBadge
 import com.example.projetorevisao.ui.designsystem.RcSosHoldButton
 import com.example.projetorevisao.ui.designsystem.RcTextButton
-import com.example.projetorevisao.ui.designsystem.RcWeatherGlyph
-import com.example.projetorevisao.ui.designsystem.RcWeatherKind
 import com.example.projetorevisao.ui.theme.CitizenSPTheme
 import com.example.projetorevisao.ui.theme.RcSpacing
 import com.example.projetorevisao.ui.theme.RcTheme
@@ -76,10 +79,13 @@ fun CitizenOnboardingScreen(
     if (stage < 3) {
         OnboardingPager(onDone = { stage = 3 })
     } else {
-        LocationPermissionGate(
-            onGranted = onFinishOnboarding,
-            onBack = { stage = 0 }
-        )
+        // O onboarding desenha por trás da barra de status (topo azul); aqui devolvemos esse espaço.
+        Box(Modifier.statusBarsPadding()) {
+            LocationPermissionGate(
+                onGranted = onFinishOnboarding,
+                onBack = { stage = 0 }
+            )
+        }
     }
 }
 
@@ -88,17 +94,17 @@ private fun OnboardingPager(onDone: () -> Unit) {
     val pages = listOf(
         OnboardingPage(
             headline = "Saiba o que acontece no seu caminho.",
-            body = "Relatos da vizinhança, clima e status do metrô e dos trens no mesmo lugar, perto de onde você está.",
+            body = "Alertas, trânsito e transporte perto de você.",
             preview = { PreviewWhatsHappening() }
         ),
         OnboardingPage(
             headline = "Avise sem se expor.",
-            body = "Seus relatos saem como anônimos por padrão. Seu nome, e-mail e guardiões nunca ficam públicos.",
+            body = "Seus relatos saem como anônimos por padrão.",
             preview = { PreviewAnonymous() }
         ),
         OnboardingPage(
             headline = "Alguém de confiança, a um toque.",
-            body = "Segure o SOS para avisar seus guardiões pelo WhatsApp com sua localização. O app não substitui o 190.",
+            body = "Segure o SOS para avisar seus guardiões. O app não substitui o 190.",
             preview = { PreviewSos() }
         )
     )
@@ -110,42 +116,28 @@ private fun OnboardingPager(onDone: () -> Unit) {
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // Topo: marca à esquerda, emergência à direita (longe do botão principal).
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = RcSpacing.md, vertical = RcSpacing.xs)
-        ) {
-            RedeCidadaLogo(size = 32.dp)
-            Spacer(Modifier.width(RcSpacing.xs))
-            Text("Rede Cidadã", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
-            RcEmergencyCallChip()
-        }
+        BrandHeader()
 
         HorizontalPager(state = pager, modifier = Modifier.weight(1f)) { index ->
             val page = pages[index]
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(horizontal = RcSpacing.lg),
-                verticalArrangement = Arrangement.Center
+                    .padding(horizontal = RcSpacing.lg)
             ) {
-                Box(
-                    Modifier.fillMaxWidth().weight(1f),
-                    contentAlignment = Alignment.Center
-                ) { page.preview() }
-                Spacer(Modifier.height(RcSpacing.lg))
+                // Título e apoio no topo; o pedaço do app embaixo.
                 Text(
                     page.headline,
-                    style = MaterialTheme.typography.displaySmall,
+                    style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.semantics { heading() }
                 )
-                Spacer(Modifier.height(RcSpacing.sm))
+                Spacer(Modifier.height(RcSpacing.xs))
                 Text(page.body, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(RcSpacing.lg))
+                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.TopCenter) { page.preview() }
             }
         }
 
@@ -169,13 +161,11 @@ private fun OnboardingPager(onDone: () -> Unit) {
             }
         }
 
-        // Base: Pular (sempre) + ação principal.
+        // Base: ação principal e, à direita, Pular.
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth().padding(RcSpacing.md)
         ) {
-            if (!last) RcTextButton("Pular", onClick = onDone) else Spacer(Modifier.width(1.dp))
-            Spacer(Modifier.width(RcSpacing.sm))
             RcAccentButton(
                 text = if (last) "Começar" else "Continuar",
                 onClick = {
@@ -183,33 +173,85 @@ private fun OnboardingPager(onDone: () -> Unit) {
                 },
                 modifier = Modifier.weight(1f)
             )
+            if (!last) {
+                Spacer(Modifier.width(RcSpacing.xs))
+                RcTextButton("Pular", onClick = onDone)
+            }
         }
     }
 }
 
-/** Passo 1: o que a pessoa vai ver no Início. */
+/**
+ * Topo com a identidade: degradê do azul da marca até o fundo da tela, logo no centro e o nome embaixo.
+ * Branco sobre o azul: 10,2:1 (claro) e 15,5:1 (escuro).
+ */
 @Composable
-private fun PreviewWhatsHappening() {
-    Column(verticalArrangement = Arrangement.spacedBy(RcSpacing.sm), modifier = Modifier.fillMaxWidth()) {
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+private fun BrandHeader() {
+    val background = MaterialTheme.colorScheme.background
+    val dark = background.luminance() < 0.5f
+    val top = if (dark) BrandNavyDark else BrandBlue
+    val bottom = if (dark) Color(0xFF0E1C2E) else BrandBlueHero
+    Column(Modifier.fillMaxWidth()) {
+        // Parte sólida: logo e nome sempre sobre azul (branco 10,2:1 no claro, 15,5:1 no escuro).
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(top, bottom)))
+                .statusBarsPadding()
+                .padding(top = RcSpacing.lg, bottom = RcSpacing.md),
+            contentAlignment = Alignment.Center
         ) {
-            Row(Modifier.padding(RcSpacing.md).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                RcWeatherGlyph(RcWeatherKind.PARTLY_CLOUDY, size = 28.dp)
-                Spacer(Modifier.width(RcSpacing.sm))
-                Text("21° · Parcialmente nublado", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                RcSourceBadge(RcSource.Official("Open-Meteo"))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    Modifier
+                        .size(76.dp)
+                        .background(Color.White, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) { RedeCidadaLogo(size = 52.dp) }
+                Spacer(Modifier.height(RcSpacing.sm))
+                Text("Rede Cidadã", style = MaterialTheme.typography.titleLarge, color = Color.White)
             }
         }
-        RcAlertCard(
-            category = "Iluminação", tone = RcTone.INFO, distance = "a 350 m",
-            title = "Poste apagado na saída da estação",
-            whereWhen = "Exemplo · há 20 min",
-            sources = listOf(RcSource.Resident, RcSource.Confirmations(12)),
-            onClick = {}
+        // Transição suave do azul para o fundo da tela, sem texto em cima.
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(36.dp)
+                .background(Brush.verticalGradient(listOf(bottom, background)))
         )
+    }
+}
+
+/** Passo 1: as funções principais, uma linha cada (sem repetir o que os passos 2 e 3 mostram). */
+@Composable
+private fun PreviewWhatsHappening() {
+    Column(verticalArrangement = Arrangement.spacedBy(RcSpacing.xs), modifier = Modifier.fillMaxWidth()) {
+        FeatureRow(CitizenIcons.FloodWater, RcTone.WARNING, "Risco de alagamento na sua região", "Avisos de chuva forte")
+        FeatureRow(CitizenIcons.CarIncident, RcTone.CRITICAL, "Acidente trava a Estrada de Itapecerica", "Relato de morador · há 5 min")
+        FeatureRow(CitizenIcons.Train, RcTone.WARNING, "Linha 5-Lilás com velocidade reduzida", "Status do metrô e dos trens")
+        FeatureRow(CitizenIcons.Map, RcTone.INFO, "Mapa em tempo real", "Tudo isso perto de você")
+    }
+}
+
+@Composable
+private fun FeatureRow(icon: androidx.compose.ui.graphics.vector.ImageVector, tone: RcTone, title: String, subtitle: String) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(Modifier.padding(horizontal = RcSpacing.md, vertical = RcSpacing.sm), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(40.dp).background(tone.container, CircleShape),
+                contentAlignment = Alignment.Center
+            ) { androidx.compose.material3.Icon(icon, contentDescription = null, tint = tone.color, modifier = Modifier.size(22.dp)) }
+            Spacer(Modifier.width(RcSpacing.sm))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            }
+        }
     }
 }
 
