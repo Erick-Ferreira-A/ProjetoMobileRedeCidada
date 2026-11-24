@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.setValue
@@ -155,10 +156,9 @@ fun CitizenInteractiveMapContainer(
                     LiveCartographicWebMapView(
                         neighborhood = neighborhood,
                         incidents = mapIncidents,
-                        showHeatmap = showHeatmap
-                    )
-                    ClickablePinsOverlay(
-                        incidents = mapIncidents,
+                        showHeatmap = showHeatmap,
+                        userLatitude = userLatitude,
+                        userLongitude = userLongitude,
                         onPinClick = onPinClick
                     )
                 }
@@ -328,15 +328,26 @@ private fun NativeGoogleMapsSdkView(
 private fun LiveCartographicWebMapView(
     neighborhood: String,
     incidents: List<IncidentAlert>,
-    showHeatmap: Boolean
+    showHeatmap: Boolean,
+    userLatitude: Double? = null,
+    userLongitude: Double? = null,
+    onPinClick: (IncidentAlert) -> Unit = {}
 ) {
-    val center = centerLatLngForNeighborhood(neighborhood)
+    // Centro: a pessoa (quando o GPS já respondeu); senão, o bairro.
+    val center = if (userLatitude != null && userLongitude != null) LatLng(userLatitude, userLongitude)
+        else centerLatLngForNeighborhood(neighborhood)
+    val currentIncidents by rememberUpdatedState(incidents)
+    val currentOnPinClick by rememberUpdatedState(onPinClick)
     // Fundo enquanto os tiles carregam: segue o tema (neutro quente), não um azul fixo.
     val loadingBackgroundHex = String.format("#%06X", MaterialTheme.colorScheme.surfaceContainerHigh.toArgb() and 0xFFFFFF)
 
     val markersJs = incidents.joinToString(separator = "\n") { alert ->
         val hexColor = String.format("#%06X", 0xFFFFFF and alert.category.badgeColor.value.toLong().shr(32).toInt())
+        val safeId = alert.id.filter { it.isLetterOrDigit() || it == '-' || it == '_' }
         """
+        L.circleMarker([${alert.latitude}, ${alert.longitude}], {
+            radius: 11, color: "#FFFFFF", weight: 3, fillColor: "$hexColor", fillOpacity: 1
+        }).addTo(map).on('click', function () { RcBridge.onPin("$safeId"); });
         if ($showHeatmap) {
             L.circle([${alert.latitude}, ${alert.longitude}], {
                 radius: 240,
@@ -357,18 +368,50 @@ private fun LiveCartographicWebMapView(
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
             <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
             <style>
-                html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; background: $loadingBackgroundHex; }
-                .leaflet-control-attribution { display: none !important; }
+                html, body { height: 100%; width: 100%; margin: 0; padding: 0; background: $loadingBackgroundHex; }
+                /* Fixado nas bordas (recomendação do Leaflet): altura em % ficava 0 dentro do app. */
+                #map { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: $loadingBackgroundHex; }
+                .leaflet-control-attribution { font-size: 10px; background: rgba(255,255,255,0.75) !important; }
+                .leaflet-control-attribution a { color: #1D3B8B; }
             </style>
         </head>
         <body>
             <div id="map"></div>
             <script>
-                var map = L.map('map', { zoomControl: false }).setView([${center.latitude}, ${center.longitude}], 14);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 19
+                // Dentro do app, alturas relativas (%, top/bottom) chegam a 0; fixa em pixels pela janela.
+                function fitMap() {
+                    var el = document.getElementById('map');
+                    el.style.height = window.innerHeight + 'px';
+                    el.style.width = window.innerWidth + 'px';
+                }
+                fitMap();
+                var map = L.map('map', { zoomControl: false, attributionControl: false }).setView([${center.latitude}, ${center.longitude}], 14);
+                // OpenStreetMap: aberto, sem chave. A licença exige o crédito visível (ODbL).
+                // INTEGRAR: antes da loja, usar a chave do Google Maps (ou um provedor com cota própria);
+                // os servidores do OSM não são para uso pesado de apps.
+                var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: ''
                 }).addTo(map);
+                // Crédito no topo direito: embaixo ele fica atrás do painel de relatos.
+                L.control.attribution({ position: 'topright', prefix: false }).addAttribution('© OpenStreetMap').addTo(map);
+                var ok = 0, fail = 0;
+                tiles.on('tileload', function () { ok++; });
+                tiles.on('tileerror', function (e) { fail++; console.log('rc-map: bloco falhou ' + (e.tile && e.tile.src)); });
+                setTimeout(function () {
+                    var c = map.getContainer();
+                    console.log('rc-map: blocos ok=' + ok + ' falhas=' + fail + ' container=' + c.clientWidth + 'x' + c.clientHeight + ' janela=' + window.innerWidth + 'x' + window.innerHeight + ' body=' + document.body.clientHeight + ' html=' + document.documentElement.clientHeight + ' pos=' + getComputedStyle(c).position);
+                }, 4000);
                 $markersJs
+                ${if (userLatitude != null && userLongitude != null) """
+                L.circleMarker([$userLatitude, $userLongitude], {
+                    radius: 8, color: "#FFFFFF", weight: 3, fillColor: "#1D3B8B", fillOpacity: 1
+                }).addTo(map);
+                """ else ""}
+                // O WebView pode abrir com altura zero (a tela ainda está montando): recalcula o
+                // tamanho quando ele muda, senão o Leaflet não pede nenhum bloco do mapa.
+                window.addEventListener('resize', function () { fitMap(); map.invalidateSize(); });
+                [100, 400, 1200].forEach(function (ms) { setTimeout(function () { fitMap(); map.invalidateSize(); }, ms); });
             </script>
         </body>
         </html>
@@ -380,12 +423,41 @@ private fun LiveCartographicWebMapView(
             WebView(context).apply {
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
-                webViewClient = WebViewClient()
+                webViewClient = object : WebViewClient() {
+                    override fun onReceivedError(view: WebView, request: android.webkit.WebResourceRequest, error: android.webkit.WebResourceError) {
+                        if (com.example.projetorevisao.BuildConfig.DEBUG) android.util.Log.d("RcWebMap", "erro ${error.errorCode} ${error.description} em ${request.url}")
+                    }
+                    override fun onPageFinished(view: WebView, url: String?) {
+                        if (com.example.projetorevisao.BuildConfig.DEBUG) android.util.Log.d("RcWebMap", "pagina carregada, altura=${view.height}")
+                    }
+                }
+                if (com.example.projetorevisao.BuildConfig.DEBUG) {
+                    // Debug: erros da página do mapa vão para o logcat (tag "RcWebMap").
+                    webChromeClient = object : android.webkit.WebChromeClient() {
+                        override fun onConsoleMessage(message: android.webkit.ConsoleMessage): Boolean {
+                            android.util.Log.d("RcWebMap", "${message.messageLevel()} ${message.message()} @${message.sourceId()}:${message.lineNumber()}")
+                            return true
+                        }
+                    }
+                }
+                // Toque num pino (desenhado no Leaflet) abre o detalhe do relato no app.
+                addJavascriptInterface(object {
+                    @android.webkit.JavascriptInterface
+                    fun onPin(id: String) {
+                        post { currentIncidents.firstOrNull { it.id.filter { c -> c.isLetterOrDigit() || c == '-' || c == '_' } == id }?.let(currentOnPinClick) }
+                    }
+                }, "RcBridge")
                 loadDataWithBaseURL("https://unpkg.com", htmlContent, "text/html", "UTF-8", null)
+                tag = htmlContent
             }
         },
         update = { webView ->
-            webView.loadDataWithBaseURL("https://unpkg.com", htmlContent, "text/html", "UTF-8", null)
+            // Só recarrega quando o conteúdo do mapa muda. Antes recarregava a cada recomposição
+            // (clima, localização, relatos), e os blocos do mapa nunca terminavam de baixar.
+            if (webView.tag != htmlContent) {
+                webView.tag = htmlContent
+                webView.loadDataWithBaseURL("https://unpkg.com", htmlContent, "text/html", "UTF-8", null)
+            }
         }
     )
 }
