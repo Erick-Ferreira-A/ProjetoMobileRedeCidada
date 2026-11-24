@@ -99,7 +99,7 @@ private fun OnboardingPager(onDone: () -> Unit) {
         ),
         OnboardingPage(
             headline = "Avise sem se expor.",
-            body = "Seus relatos saem como anônimos por padrão.",
+            body = "Anônimo por padrão. Cada relato ganha um score de confiabilidade.",
             preview = { PreviewAnonymous() }
         ),
         OnboardingPage(
@@ -187,37 +187,37 @@ private fun OnboardingPager(onDone: () -> Unit) {
  */
 @Composable
 private fun BrandHeader() {
-    val background = MaterialTheme.colorScheme.background
-    val dark = background.luminance() < 0.5f
-    val top = if (dark) BrandNavyDark else BrandBlue
-    val bottom = if (dark) Color(0xFF0E1C2E) else BrandBlueHero
-    Column(Modifier.fillMaxWidth()) {
-        // Parte sólida: logo e nome sempre sobre azul (branco 10,2:1 no claro, 15,5:1 no escuro).
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    // Azul mais vivo que o da marca, para o brilho; some até ficar transparente (sem faixa nem borda).
+    val glow = if (dark) Color(0xFF3D6BFF) else Color(0xFF3D63E0)
+    val glowStart = if (dark) 0.55f else 0.42f
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(top = RcSpacing.md, bottom = RcSpacing.lg),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Box(
             Modifier
-                .fillMaxWidth()
-                .background(Brush.verticalGradient(listOf(top, bottom)))
-                .statusBarsPadding()
-                .padding(top = RcSpacing.lg, bottom = RcSpacing.md),
+                .size(176.dp)
+                .background(
+                    Brush.radialGradient(
+                        0f to glow.copy(alpha = glowStart),
+                        0.45f to glow.copy(alpha = glowStart * 0.45f),
+                        1f to Color.Transparent
+                    )
+                ),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    Modifier
-                        .size(76.dp)
-                        .background(Color.White, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) { RedeCidadaLogo(size = 52.dp) }
-                Spacer(Modifier.height(RcSpacing.sm))
-                Text("Rede Cidadã", style = MaterialTheme.typography.titleLarge, color = Color.White)
-            }
+            // A parte branca do escudo fica um pouco translúcida para se misturar ao brilho.
+            RedeCidadaLogo(size = 68.dp, innerSurfaceColor = Color.White.copy(alpha = 0.92f))
         }
-        // Transição suave do azul para o fundo da tela, sem texto em cima.
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(36.dp)
-                .background(Brush.verticalGradient(listOf(bottom, background)))
+        Text(
+            "Rede Cidadã",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(top = 0.dp)
         )
     }
 }
@@ -228,7 +228,8 @@ private fun PreviewWhatsHappening() {
     Column(verticalArrangement = Arrangement.spacedBy(RcSpacing.xs), modifier = Modifier.fillMaxWidth()) {
         FeatureRow(CitizenIcons.FloodWater, RcTone.WARNING, "Risco de alagamento na sua região", "Avisos de chuva forte")
         FeatureRow(CitizenIcons.CarIncident, RcTone.CRITICAL, "Acidente trava a Estrada de Itapecerica", "Relato de morador · há 5 min")
-        FeatureRow(CitizenIcons.Train, RcTone.WARNING, "Linha 5-Lilás com velocidade reduzida", "Status do metrô e dos trens")
+        // Pedido do Erick (24/11/2026). Guia §2.1: mostrar relatos perto da pessoa, nunca "bairro perigoso".
+        FeatureRow(CitizenIcons.WarningTriangle, RcTone.CRITICAL, "Onde há mais relatos de assalto agora", "Relatos da comunidade em tempo real")
         FeatureRow(CitizenIcons.Map, RcTone.INFO, "Mapa em tempo real", "Tudo isso perto de você")
     }
 }
@@ -257,7 +258,7 @@ private fun FeatureRow(icon: androidx.compose.ui.graphics.vector.ImageVector, to
 
 /** Passo 2: a chave de anônimo, como aparece ao relatar. */
 @Composable
-private fun PreviewAnonymous() {
+private fun PreviewAnonymous() = Column(Modifier.fillMaxWidth()) {
     Surface(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
@@ -279,6 +280,39 @@ private fun PreviewAnonymous() {
             }
             Text("O que fica só com você", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Nome · e-mail · guardiões · alertas SOS", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
+    Spacer(Modifier.height(RcSpacing.sm))
+    TrustScorePreview()
+}
+
+/**
+ * Score de confiabilidade do relato (pedido do Erick, 24/11/2026).
+ * INTEGRAR: hoje não há análise automática (IA) nem cálculo — o score do usuário é fixo (940).
+ * Implementar antes de publicar na loja ou tirar a menção à análise automática.
+ */
+@Composable
+private fun TrustScorePreview() {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(Modifier.padding(RcSpacing.md), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(52.dp).background(RcTone.SAFE.container, CircleShape),
+                contentAlignment = Alignment.Center
+            ) { Text("92%", style = MaterialTheme.typography.titleSmall, color = RcTone.SAFE.color) }
+            Spacer(Modifier.width(RcSpacing.sm))
+            Column(Modifier.weight(1f)) {
+                Text("Confiabilidade do relato", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    "Avaliação de outros moradores + análise automática",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
