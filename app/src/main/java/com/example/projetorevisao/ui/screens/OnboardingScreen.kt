@@ -1,6 +1,7 @@
 package com.example.projetorevisao.ui.screens
 
 import android.content.res.Configuration
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,282 +12,255 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.projetorevisao.ui.components.CitizenIcons
 import com.example.projetorevisao.ui.components.RedeCidadaLogo
-import com.example.projetorevisao.ui.theme.BrandBlue
-import com.example.projetorevisao.ui.theme.BrandBlueHero
-import com.example.projetorevisao.ui.theme.BrandNavyDark
-import com.example.projetorevisao.ui.theme.BrandOrange
+import com.example.projetorevisao.ui.designsystem.RcAccentButton
+import com.example.projetorevisao.ui.designsystem.RcAlertCard
+import com.example.projetorevisao.ui.designsystem.RcEmergencyCallChip
+import com.example.projetorevisao.ui.designsystem.RcSource
+import com.example.projetorevisao.ui.designsystem.RcSourceBadge
+import com.example.projetorevisao.ui.designsystem.RcSosHoldButton
+import com.example.projetorevisao.ui.designsystem.RcTextButton
+import com.example.projetorevisao.ui.designsystem.RcWeatherGlyph
+import com.example.projetorevisao.ui.designsystem.RcWeatherKind
 import com.example.projetorevisao.ui.theme.CitizenSPTheme
-import com.example.projetorevisao.ui.theme.CitizenStatusColors
+import com.example.projetorevisao.ui.theme.RcSpacing
+import com.example.projetorevisao.ui.theme.RcTheme
+import com.example.projetorevisao.ui.theme.RcTone
+import kotlinx.coroutines.launch
 
+/** Um passo do onboarding: a frase (resposta), o apoio e um pedaço real do app no lugar de ilustração. */
+private data class OnboardingPage(
+    val headline: String,
+    val body: String,
+    val preview: @Composable () -> Unit
+)
+
+/**
+ * Onboarding (docs/design/TELAS.md §2.9) — 3 passos e depois a permissão de localização.
+ *
+ * Guia visual v1.0: fundo neutro do tema (sem degradê), títulos em Bricolage, laranja só no
+ * botão de destaque com texto marinho, "Pular" sempre visível e o atalho de emergência no topo,
+ * longe do botão principal (achado de 23/11/2026).
+ */
 @Composable
 fun CitizenOnboardingScreen(
     onFinishOnboarding: () -> Unit
 ) {
-    var step by rememberSaveable { mutableIntStateOf(0) }
-
-    if (step == 0) {
-        OnboardingWelcomeStep(
-            onNext = { step = 1 }
-        )
+    // 0..2 = apresentação; 3 = localização.
+    var stage by rememberSaveable { mutableIntStateOf(0) }
+    if (stage < 3) {
+        OnboardingPager(onDone = { stage = 3 })
     } else {
         LocationPermissionGate(
             onGranted = onFinishOnboarding,
-            onBack = { step = 0 }
+            onBack = { stage = 0 }
         )
     }
 }
 
 @Composable
-private fun OnboardingWelcomeStep(
-    onNext: () -> Unit
-) {
+private fun OnboardingPager(onDone: () -> Unit) {
+    val pages = listOf(
+        OnboardingPage(
+            headline = "Saiba o que acontece no seu caminho.",
+            body = "Relatos da vizinhança, clima e status do metrô e dos trens no mesmo lugar, perto de onde você está.",
+            preview = { PreviewWhatsHappening() }
+        ),
+        OnboardingPage(
+            headline = "Avise sem se expor.",
+            body = "Seus relatos saem como anônimos por padrão. Seu nome, e-mail e guardiões nunca ficam públicos.",
+            preview = { PreviewAnonymous() }
+        ),
+        OnboardingPage(
+            headline = "Alguém de confiança, a um toque.",
+            body = "Segure o SOS para avisar seus guardiões pelo WhatsApp com sua localização. O app não substitui o 190.",
+            preview = { PreviewSos() }
+        )
+    )
+    val pager = rememberPagerState { pages.size }
+    val scope = rememberCoroutineScope()
+    val last = pager.currentPage == pages.lastIndex
+
     Column(
-        modifier = Modifier
+        Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        BrandNavyDark,
-                        BrandBlue,
-                        BrandNavyDark
-                    )
-                )
-            )
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Hero Identity from Figma 192:440
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+        // Topo: marca à esquerda, emergência à direita (longe do botão principal).
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = RcSpacing.md, vertical = RcSpacing.xs)
         ) {
-            Surface(
-                shape = CircleShape,
-                color = Color.White.copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                RedeCidadaLogo(
-                    size = 92.dp,
-                    modifier = Modifier.padding(14.dp)
-                )
-            }
-
-            Text(
-                text = "Rede Cidadã",
-                style = MaterialTheme.typography.headlineLarge,
-                color = Color.White,
-                fontWeight = FontWeight.ExtraBold
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = "Segurança comunitária e mobilidade urbana em São Paulo",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.85f),
-                textAlign = TextAlign.Center
-            )
+            RedeCidadaLogo(size = 32.dp)
+            Spacer(Modifier.width(RcSpacing.xs))
+            Text("Rede Cidadã", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
+            RcEmergencyCallChip()
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 3 Pillars from Figma 192:440
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OnboardingPillarCard(
-                icon = CitizenIcons.Notifications,
-                iconTint = BrandOrange,
-                title = "Relatos da vizinhança",
-                description = "Veja e envie relatos com foto ou vídeo do que acontece perto de você."
-            )
-            OnboardingPillarCard(
-                icon = CitizenIcons.Groups,
-                iconTint = Color(0xFF38BDF8),
-                title = "SOS com guardiões",
-                description = "Em perigo, ligue 190 e avise pelo WhatsApp as pessoas de confiança que você cadastrar."
-            )
-            OnboardingPillarCard(
-                icon = CitizenIcons.PoliceShield,
-                iconTint = Color(0xFF34D399),
-                title = "Clima e transporte",
-                description = "Risco de chuva e vento, status dos trilhos e previsão dos ônibus em tempo real."
-            )
-        }
-
-        Spacer(modifier = Modifier.height(28.dp))
-
-        // Bottom CTA + Step indicator
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Button(
-                onClick = onNext,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BrandOrange,
-                    contentColor = Color.White
-                )
+        HorizontalPager(state = pager, modifier = Modifier.weight(1f)) { index ->
+            val page = pages[index]
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = RcSpacing.lg),
+                verticalArrangement = Arrangement.Center
             ) {
+                Box(
+                    Modifier.fillMaxWidth().weight(1f),
+                    contentAlignment = Alignment.Center
+                ) { page.preview() }
+                Spacer(Modifier.height(RcSpacing.lg))
                 Text(
-                    text = "Começar",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    page.headline,
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.semantics { heading() }
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = CitizenIcons.ArrowForward,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
+                Spacer(Modifier.height(RcSpacing.sm))
+                Text(page.body, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(RcSpacing.lg))
+            }
+        }
+
+        // Indicador de passo.
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier
+                .padding(horizontal = RcSpacing.lg)
+                .semantics { contentDescription = "Passo ${pager.currentPage + 1} de ${pages.size}" }
+        ) {
+            pages.indices.forEach { i ->
+                val width by animateDpAsState(if (i == pager.currentPage) 24.dp else 8.dp, label = "dot")
+                Box(
+                    Modifier
+                        .size(width = width, height = 8.dp)
+                        .background(
+                            if (i == pager.currentPage) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.outlineVariant,
+                            CircleShape
+                        )
                 )
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OnboardingDotsIndicator(activeStep = 0)
+        // Base: Pular (sempre) + ação principal.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(RcSpacing.md)
+        ) {
+            if (!last) RcTextButton("Pular", onClick = onDone) else Spacer(Modifier.width(1.dp))
+            Spacer(Modifier.width(RcSpacing.sm))
+            RcAccentButton(
+                text = if (last) "Começar" else "Continuar",
+                onClick = {
+                    if (last) onDone() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) }
+                },
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
 
+/** Passo 1: o que a pessoa vai ver no Início. */
 @Composable
-private fun OnboardingPillarCard(
-    icon: ImageVector,
-    iconTint: Color,
-    title: String,
-    description: String
-) {
+private fun PreviewWhatsHappening() {
+    Column(verticalArrangement = Arrangement.spacedBy(RcSpacing.sm), modifier = Modifier.fillMaxWidth()) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Row(Modifier.padding(RcSpacing.md).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                RcWeatherGlyph(RcWeatherKind.PARTLY_CLOUDY, size = 28.dp)
+                Spacer(Modifier.width(RcSpacing.sm))
+                Text("21° · Parcialmente nublado", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                RcSourceBadge(RcSource.Official("Open-Meteo"))
+            }
+        }
+        RcAlertCard(
+            category = "Iluminação", tone = RcTone.INFO, distance = "a 350 m",
+            title = "Poste apagado na saída da estação",
+            whereWhen = "Exemplo · há 20 min",
+            sources = listOf(RcSource.Resident, RcSource.Confirmations(12)),
+            onClick = {}
+        )
+    }
+}
+
+/** Passo 2: a chave de anônimo, como aparece ao relatar. */
+@Composable
+private fun PreviewAnonymous() {
     Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White.copy(alpha = 0.10f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(iconTint.copy(alpha = 0.20f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconTint,
-                    modifier = Modifier.size(24.dp)
-                )
+        Column(Modifier.padding(RcSpacing.md), verticalArrangement = Arrangement.spacedBy(RcSpacing.sm)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Publicar como anônimo", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Ligado por padrão", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(checked = true, onCheckedChange = null)
             }
-            Spacer(modifier = Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.82f),
-                    lineHeight = 18.sp
-                )
+            Text("O que os outros veem", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(RcSpacing.xs)) {
+                RcSourceBadge(RcSource.Resident)
+                RcSourceBadge(RcSource.Confirmations(5))
             }
+            Text("O que fica só com você", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Nome · e-mail · guardiões · alertas SOS", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
 
+/** Passo 3: o botão de SOS de verdade (aqui só demonstra; não aciona nada). */
 @Composable
-private fun OnboardingDotsIndicator(
-    activeStep: Int,
-    darkBackground: Boolean = true
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        repeat(3) { index ->
-            val isSelected = index == activeStep
-            val activeColor = if (darkBackground) BrandOrange else BrandBlue
-            val inactiveColor = if (darkBackground) {
-                Color.White.copy(alpha = 0.35f)
-            } else {
-                MaterialTheme.colorScheme.outlineVariant
-            }
-            Box(
-                modifier = Modifier
-                    .height(8.dp)
-                    .width(if (isSelected) 24.dp else 8.dp)
-                    .clip(CircleShape)
-                    .background(if (isSelected) activeColor else inactiveColor)
-            )
+private fun PreviewSos() {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+        RcSosHoldButton(onActivate = {}, size = 168.dp)
+        Spacer(Modifier.height(RcSpacing.sm))
+        Surface(shape = CircleShape, color = RcTheme.colors.safeContainer, contentColor = RcTheme.colors.safe) {
+            Text("Mariana e Carlos recebem sua localização", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
         }
     }
 }
 
-@Preview(showBackground = true, name = "Onboarding Welcome - Light")
+@Preview(name = "Onboarding · claro", showSystemUi = true)
 @Composable
 fun PreviewCitizenOnboardingWelcome() {
-    CitizenSPTheme(darkTheme = false) {
-        CitizenOnboardingScreen(onFinishOnboarding = {})
-    }
+    CitizenSPTheme(darkTheme = false) { CitizenOnboardingScreen(onFinishOnboarding = {}) }
 }
 
-@Preview(
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    name = "Onboarding Location - Dark"
-)
+@Preview(name = "Onboarding · escuro", showSystemUi = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun PreviewCitizenOnboardingLocationDark() {
-    CitizenSPTheme(darkTheme = true) {
-        LocationPermissionGate(onGranted = {}, onBack = {})
-    }
+    CitizenSPTheme(darkTheme = true) { CitizenOnboardingScreen(onFinishOnboarding = {}) }
 }

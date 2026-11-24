@@ -22,6 +22,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -313,3 +315,33 @@ private fun CatalogLightPreview() = RcAppTheme(darkTheme = false) { CatalogPrevi
 @Preview(name = "Design system · escuro", widthDp = 400, heightDp = 1000, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun CatalogDarkPreview() = RcAppTheme(darkTheme = true) { CatalogPreviewContent() }
+
+/**
+ * Atalho de emergência compacto (TELAS §2.9): fica no topo da tela, longe do botão principal,
+ * para não ser tocado por engano. Abre o discador com 190 preenchido; nunca liga sozinho.
+ */
+@Composable
+fun RcEmergencyCallChip(modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Surface(
+        onClick = {
+            try {
+                context.startActivity(android.content.Intent(android.content.Intent.ACTION_DIAL, android.net.Uri.parse("tel:190")))
+            } catch (_: android.content.ActivityNotFoundException) {
+                // Aparelho sem telefone: o rótulo já diz o número.
+            }
+        },
+        shape = CircleShape,
+        color = RcTheme.colors.criticalContainer,
+        contentColor = RcTheme.colors.critical,
+        modifier = modifier
+            .heightIn(min = RcSpacing.minTouch)
+            .semantics { contentDescription = "Emergência: abrir o discador com 190" }
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(com.example.projetorevisao.ui.components.CitizenIcons.PhoneCall, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("190", style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}

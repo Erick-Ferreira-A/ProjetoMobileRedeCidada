@@ -222,11 +222,14 @@ fun CitizenLoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
+                    shape = MaterialTheme.shapes.medium,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 ) {
                     if (loading) {
-                        CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
+                        CircularProgressIndicator(modifier = Modifier.size(22.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                     } else {
                         Text(
                             text = if (isRegister) "Criar conta" else "Entrar",
@@ -242,20 +245,20 @@ fun CitizenLoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, BrandOrange.copy(alpha = 0.6f))
+                    shape = MaterialTheme.shapes.medium,
+                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Icon(
                         imageVector = CitizenIcons.VisibilityOff,
                         contentDescription = null,
-                        tint = BrandOrange,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Continuar sem conta",
                         style = MaterialTheme.typography.labelLarge,
-                        color = BrandOrange,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
                     )
                 }
