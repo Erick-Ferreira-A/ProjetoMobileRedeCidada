@@ -67,28 +67,26 @@ Onboarding (3 passos) → Localização → Entrar / Criar conta / Continuar sem
 
 Cada tela tem: **pergunta** que responde · **frase-resumo** (headline) · **anatomia** de cima para baixo · **interações** · **estados** · **fora desta tela**.
 
-### 2.1 Início (`home`)
+### 2.1 Início (`home`) — revisado com o usuário em 23/11/2026
 
 - **Pergunta:** "Está tudo bem no meu caminho agora?"
+- **Estrutura:**
+  1. Cabeçalho: saudação + bairro · escudo SOS.
+  2. **Mapa ocupando quase a tela toda** (entre cabeçalho e navegação), livre para navegar. Sem card, sem mancha de calor, sem rótulo de bairro duplicado.
+  3. Sobre o mapa, no topo: **Filtros** (mostra quantos estão ativos: "Filtros · 2") e **busca**. Botão "Minha localização" no canto inferior direito, acima do painel.
+  4. **Painel de baixo** (padrão Google Maps/Airbnb):
+     - Recolhido: frase-resumo (dinâmica, ver abaixo) + "N relatos em X km" + **clima pequeno** ("21° Nublado", com ponto verde quando ao vivo).
+     - Puxando para cima: aviso "Relatos de moradores…", cards de alerta por relevância e o fim da lista com "Aumentar o raio" / "Limpar filtro".
+- **Painel de Filtros** (sheet): "O que mostrar" com várias categorias ao mesmo tempo ("Tudo" limpa) + "Raio a partir de você" (1 · 2 · 5 km) + "Limpar" e "Mostrar N relatos" (conta antes de aplicar). Só aplica ao confirmar.
+- **Fora do Início:** cards grandes de clima e trilhos (trilhos ficam em Mobilidade), título grande, chips soltos na tela, alternância Lista | Mapa.
 - **Frase-resumo (dinâmica):**
-  - Nada relevante: "Seu caminho está tranquilo agora."
-  - 1 ou 2 alertas de atenção: "Atenção a 2 pontos perto de você."
-  - Crítico a menos de 500 m: "Evite a Rua X agora." (com link para o alerta)
-  - Sem conexão: "Sem conexão. Mostrando dados de 18:12."
-- **Anatomia:**
-  1. Barra superior: saudação + bairro (toca para trocar a área) · escudo SOS.
-  2. Frase-resumo (headlineMedium).
-  3. **Faixa de agora**, rolando na horizontal com 3 cartões compactos:
-     - Clima (temperatura e condição, com selo "Ao vivo 18:40").
-     - Trilhos (o pior status entre as linhas próximas: "Linha 5 · velocidade reduzida" ou "Linhas normais").
-     - Alagamentos (só aparece se houver dado).
-  4. **Prévia do mapa** (180 dp) com os alertas do raio. Toque abre o mapa em tela cheia.
-  5. Alternância **Lista | Mapa** (segmentada) e chips de categoria.
-  6. **Alertas perto de você**: cards de alerta (componente padrão), ordenados por relevância (distância × recência × confirmações).
-  7. Fim da lista: "Isso é tudo nas últimas 24 h num raio de 2 km." + "Aumentar o raio".
-- **Interações:** puxar para atualizar · tocar no card abre o Detalhe (sheet) · "Também vi" direto no card · chip filtra sem recarregar a tela.
-- **Estados:** carregando (skeleton da faixa + 3 cards) · vazio (frase positiva + raio) · sem conexão (frase-resumo muda e todos os selos viram "Dados de HH:MM") · sem permissão de localização (card pedindo, com o motivo).
-- **Fora desta tela:** catálogo de integrações (vai para Perfil › Fontes de dados), nível de risco do bairro, score de segurança. **Nunca pintar regiões de vermelho/verde**: estigmatiza territórios como o próprio Capão Redondo.
+  - Nada perto: "Seu caminho está tranquilo agora."
+  - Alertas: "Atenção a N pontos perto de você."
+  - Crítico a menos de 500 m: "Evite a Rua X agora."
+  - Busca de relatos falhou: "Não consegui ver os alertas agora." (**nunca** "tranquilo" sem ter conseguido ver).
+- **Interações:** tocar no card ou no pino abre o Detalhe · "Também vi" e "Compartilhar" direto no card · avisos do app aparecem como snackbar, sem empurrar o mapa.
+- **Implementação:** `BottomSheetScaffold` (painel), `ModalBottomSheet` (filtros), lógica do resumo em `ui/home/HomeSummary.kt` com testes.
+- **Nunca pintar regiões de vermelho/verde.**
 
 ### 2.2 Mapa em tela cheia (`home/map`)
 

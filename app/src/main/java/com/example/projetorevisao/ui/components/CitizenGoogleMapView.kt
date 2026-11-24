@@ -111,7 +111,11 @@ fun CitizenInteractiveMapContainer(
     userLatitude: Double? = null,
     userLongitude: Double? = null,
     userAreaLabel: String? = null,
-    userLocationVersion: Int = 0
+    userLocationVersion: Int = 0,
+    /** Mapa de tela inteira (Início): sem card, sem camadas/mancha de calor e sem rótulo de bairro. */
+    fullBleed: Boolean = false,
+    /** Espaço livre embaixo (ex.: painel recolhido do Início) para o botão de localização não ficar coberto. */
+    controlsBottomPadding: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     val isPreview = LocalInspectionMode.current
     val hasGoogleMapsKey = BuildConfig.MAPS_API_KEY.isNotBlank() &&
@@ -122,12 +126,19 @@ fun CitizenInteractiveMapContainer(
     // Filter pins for the active neighborhood so pins are clean and well-spaced
     val mapIncidents = remember(incidents) { incidents.take(100) }
 
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
+    val mapFrame: @Composable (@Composable () -> Unit) -> Unit = { content ->
+        if (fullBleed) {
+            Box(modifier) { content() }
+        } else {
+            Card(
+                modifier = modifier,
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) { content() }
+        }
+    }
+    mapFrame {
         Box(modifier = Modifier.fillMaxSize()) {
             when {
                 !isPreview && hasGoogleMapsKey && !preferCartographicCanvas -> {
@@ -161,14 +172,16 @@ fun CitizenInteractiveMapContainer(
                 }
             }
 
-            // Right-side Map Controls (Figma 32:824) — positioned with safe margin from pins
+            // Controles do mapa. Em tela cheia: só "minha localização", acima do painel de baixo.
             Column(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 10.dp),
+                modifier = if (fullBleed) {
+                    Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = controlsBottomPadding + 16.dp)
+                } else {
+                    Modifier.align(Alignment.CenterEnd).padding(end = 10.dp)
+                },
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Surface(
+                if (!fullBleed) Surface(
                     shape = CircleShape,
                     color = Color.White,
                     shadowElevation = 4.dp,
@@ -188,25 +201,25 @@ fun CitizenInteractiveMapContainer(
 
                 Surface(
                     shape = CircleShape,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.surface,
                     shadowElevation = 4.dp,
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(if (fullBleed) 48.dp else 36.dp)
                         .clickable(onClickLabel = "Centralizar na minha localização", onClick = onCenterOnUser)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = CitizenIcons.MyLocation,
-                            contentDescription = "Centralizar GPS",
-                            tint = BrandBlue,
-                            modifier = Modifier.size(19.dp)
+                            contentDescription = "Minha localização",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(if (fullBleed) 22.dp else 19.dp)
                         )
                     }
                 }
             }
 
-            // Bottom Location Pill (Figma 32:838)
-            Surface(
+            // Bottom Location Pill (Figma 32:838) — no Início em tela cheia o bairro já está no cabeçalho.
+            if (!fullBleed) Surface(
                 shape = RoundedCornerShape(10.dp),
                 color = Color.White.copy(alpha = 0.96f),
                 shadowElevation = 4.dp,

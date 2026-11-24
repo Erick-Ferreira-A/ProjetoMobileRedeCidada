@@ -139,6 +139,10 @@ sealed interface RcSource {
     data class Confirmations(val count: Int) : RcSource
     data class Stale(val since: String) : RcSource
     data object Example : RcSource
+    /** Fonte consultada, mas sem resposta agora. */
+    data class Unavailable(val name: String) : RcSource
+    /** Opção que já existe na tela mas ainda não está integrada. Nunca mostrar dado inventado no lugar. */
+    data object ComingSoon : RcSource
 }
 
 @Composable
@@ -154,6 +158,8 @@ fun RcSourceBadge(source: RcSource, modifier: Modifier = Modifier) {
         )
         is RcSource.Stale -> Quad("Dados de ${source.since}", Color.Transparent, scheme.onSurfaceVariant, scheme.outline)
         RcSource.Example -> Quad("Exemplo · sem conexão", Color.Transparent, scheme.onSurfaceVariant, scheme.outline)
+        is RcSource.Unavailable -> Quad("${source.name} sem resposta", Color.Transparent, scheme.onSurfaceVariant, scheme.outline)
+        RcSource.ComingSoon -> Quad("Em breve", scheme.surfaceContainerHigh, scheme.onSurfaceVariant, null)
     }
     Surface(
         modifier = modifier,
@@ -202,7 +208,9 @@ fun RcAlertCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     primaryAction: Pair<String, () -> Unit>? = null,
-    secondaryAction: Pair<String, () -> Unit>? = null
+    secondaryAction: Pair<String, () -> Unit>? = null,
+    /** Conteúdo extra entre "onde·quando" e os selos (ex.: miniaturas de foto/vídeo). */
+    media: (@Composable () -> Unit)? = null
 ) {
     Surface(
         onClick = onClick,
@@ -219,6 +227,10 @@ fun RcAlertCard(
             )
             Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
             Text(whereWhen, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (media != null) {
+                Spacer(Modifier.size(RcSpacing.xxs))
+                media()
+            }
             if (sources.isNotEmpty()) {
                 Spacer(Modifier.size(RcSpacing.xxs))
                 Row(horizontalArrangement = Arrangement.spacedBy(RcSpacing.xs)) { sources.forEach { RcSourceBadge(it) } }

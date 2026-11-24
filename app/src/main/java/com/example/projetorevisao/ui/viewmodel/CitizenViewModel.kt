@@ -232,12 +232,21 @@ class CitizenViewModel(
     val integratedApis: List<ExternalApiConnectionStatus> =
         publicSafetyRepository.apiCatalog()
 
+    /**
+     * true quando a última tentativa de buscar os relatos no servidor falhou. A tela não pode
+     * dizer "tudo tranquilo" nesse caso: a ausência de alertas pode ser só falta de conexão.
+     */
+    var incidentsSyncFailed by mutableStateOf(false)
+        private set
+
     fun refreshPublicApis() {
         viewModelScope.launch {
             isRefreshingApis = true
             remoteNotice = null
             try {
-                incidentRepository?.syncWithServer()
+                incidentRepository?.let { repository ->
+                    incidentsSyncFailed = !repository.syncWithServer()
+                }
                 weatherTelemetry = publicSafetyRepository.weather(areaLabel, userLatitude, userLongitude)
                 // Se o clima falhar, o próprio cartão mostra "Clima indisponível".
             } catch (cancelled: CancellationException) {

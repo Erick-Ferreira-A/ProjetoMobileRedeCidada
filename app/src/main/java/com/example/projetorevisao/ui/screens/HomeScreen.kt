@@ -1,6 +1,43 @@
 package com.example.projetorevisao.ui.screens
 
 import android.content.res.Configuration
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.semantics.contentDescription
+import com.example.projetorevisao.ui.designsystem.RcPrimaryButton
+import android.content.Intent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import com.example.projetorevisao.ui.designsystem.RcAlertCard
+import com.example.projetorevisao.ui.designsystem.RcFilterChip
+import com.example.projetorevisao.ui.designsystem.RcSource
+import com.example.projetorevisao.ui.designsystem.RcTextButton
+import com.example.projetorevisao.ui.home.homeSummary
+import com.example.projetorevisao.ui.home.relevanceScore
+import com.example.projetorevisao.ui.home.streetOf
+import com.example.projetorevisao.ui.theme.RcSpacing
+import com.example.projetorevisao.ui.theme.RcTone
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -72,6 +109,21 @@ import com.example.projetorevisao.ui.viewmodel.IncidentCategory
 import com.example.projetorevisao.ui.viewmodel.IncidentStatus
 import com.example.projetorevisao.ui.viewmodel.rememberCitizenViewModel
 
+/** Raios de alerta oferecidos (km). */
+private val RadiusOptionsKm = listOf(1, 2, 5)
+private const val DefaultRadiusKm = 2
+
+/** Altura do painel recolhido: alça + resumo + clima. O resto da tela é mapa. */
+private val SheetPeekHeight = 116.dp
+
+/**
+ * Início (docs/design/TELAS.md §2.1, revisado em 23/11/2026 com o usuário).
+ *
+ * - O mapa ocupa quase a tela toda, entre o cabeçalho e a navegação, e pode ser explorado livremente.
+ * - "Filtros" no topo do mapa abre um painel com categorias (várias ao mesmo tempo) e o raio.
+ * - Painel de baixo: recolhido mostra só o resumo e o clima pequeno; ao puxar para cima, os relatos próximos.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CitizenHomeScreen(
     viewModel: CitizenViewModel = rememberCitizenViewModel(),
@@ -80,185 +132,201 @@ fun CitizenHomeScreen(
     onOpenProfile: () -> Unit = {},
     onCenterOnUser: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     val selectedIncident = viewModel.selectedIncidentForDetail
-    var showSearchField by rememberSaveable { mutableStateOf(false) }
+    val snackbar = remember { SnackbarHostState() }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        // Onde você está + busca
-        item {
-            NeighborhoodSelectorRow(
-                areaLabel = viewModel.areaLabel,
-                hasLocation = viewModel.userLatitude != null,
-                showSearch = showSearchField,
-                onToggleSearch = { showSearchField = !showSearchField },
-                onCenterOnUser = onCenterOnUser
-            )
+    var radiusKm by rememberSaveable { mutableIntStateOf(DefaultRadiusKm) }
+    var selectedCategoryNames by rememberSaveable { mutableStateOf(emptyList<String>()) }
+    val selectedCategories = selectedCategoryNames.mapNotNull { name -> IncidentCategory.entries.find { it.name == name } }.toSet()
+    var showFilters by rememberSaveable { mutableStateOf(false) }
+    var showSearch by rememberSaveable { mutableStateOf(false) }
+
+    val now = System.currentTimeMillis()
+    fun matches(alert: IncidentAlert, categories: Set<IncidentCategory>, radius: Int) =
+        (alert.distanceMeters <= 0 || alert.distanceMeters <= radius * 1000) &&
+            (categories.isEmpty() || alert.category in categories)
+
+    val visibleAlerts = viewModel.incidents
+        .filter { matches(it, selectedCategories, radiusKm) }
+        .sortedBy { relevanceScore(it, now) }
+    val summary = homeSummary(
+        visibleAlerts, emptyList(),
+        loading = viewModel.isRefreshingApis && visibleAlerts.isEmpty(),
+        alertsUnavailable = viewModel.incidentsSyncFailed
+    )
+    val activeFilterCount = selectedCategories.size + if (radiusKm != DefaultRadiusKm) 1 else 0
+
+    // Avisos do app (relato enviado, erro...) aparecem como snackbar, sem empurrar o mapa.
+    val notice = viewModel.incidentActionMessage ?: viewModel.userNotice
+    LaunchedEffect(notice) {
+        if (notice != null) {
+            snackbar.showSnackbar(notice)
+            if (viewModel.incidentActionMessage != null) viewModel.clearIncidentActionMessage()
         }
+    }
 
-        if (showSearchField) {
-            item {
-                OutlinedTextField(
-                    value = viewModel.searchQuery,
-                    onValueChange = { viewModel.updateSearchQuery(it) },
-                    placeholder = { Text("Buscar rua, estação de metrô ou tipo de alerta...") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = CitizenIcons.Search,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(
+            initialValue = SheetValue.PartiallyExpanded,
+            skipHiddenState = true
+        )
+    )
+
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
+        sheetPeekHeight = SheetPeekHeight,
+        sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        sheetContainerColor = MaterialTheme.colorScheme.surface,
+        sheetTonalElevation = 0.dp,
+        sheetShadowElevation = 12.dp,
+        sheetDragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outline) },
+        snackbarHost = { SnackbarHost(snackbar) },
+        containerColor = MaterialTheme.colorScheme.background,
+        sheetContent = {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(start = RcSpacing.md, end = RcSpacing.md, bottom = RcSpacing.xl),
+                verticalArrangement = Arrangement.spacedBy(RcSpacing.md)
+            ) {
+                // Visível com o painel recolhido: resumo + clima pequeno.
+                item(key = "peek") {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                text = summary.text,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = summary.tone?.color ?: MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.semantics { heading(); liveRegion = LiveRegionMode.Polite }
+                            )
+                            Text(
+                                text = when (visibleAlerts.size) {
+                                    0 -> "Raio de $radiusKm km"
+                                    1 -> "1 relato em $radiusKm km"
+                                    else -> "${visibleAlerts.size} relatos em $radiusKm km"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                            )
+                        }
+                        Spacer(Modifier.width(RcSpacing.sm))
+                        WeatherPill(viewModel.weatherTelemetry, viewModel.isRefreshingApis)
+                    }
+                }
+
+                item(key = "disclaimer") {
+                    Text(
+                        "Relatos de moradores. Não são confirmados pela polícia.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                items(visibleAlerts, key = { it.id }) { incident ->
+                    HomeAlertCard(
+                        incident = incident,
+                        onOpen = { viewModel.openIncidentDetail(incident) },
+                        onConfirm = { viewModel.confirmIncident(incident.id) },
+                        onShare = { context.shareIncident(incident) }
+                    )
+                }
+
+                item(key = "end") {
+                    HomeListEnd(
+                        isEmpty = visibleAlerts.isEmpty(),
+                        filtering = selectedCategories.isNotEmpty() || viewModel.searchQuery.isNotBlank(),
+                        radiusKm = radiusKm,
+                        canGrow = radiusKm < RadiusOptionsKm.last(),
+                        onGrowRadius = { radiusKm = RadiusOptionsKm.first { it > radiusKm } },
+                        onClearFilter = {
+                            selectedCategoryNames = emptyList()
+                            viewModel.updateSearchQuery("")
+                        },
+                        onReport = onOpenReportSheet
+                    )
+                }
             }
         }
-
-        // Interactive Map View Card (Figma 32:781)
-        item {
-            InteractiveIncidentMapCard(
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            CitizenInteractiveMapContainer(
                 neighborhood = viewModel.areaLabel,
-                incidents = viewModel.incidents,
-                showHeatmap = viewModel.showHeatmapOverlay,
-                onToggleHeatmap = { viewModel.toggleHeatmap() },
+                incidents = visibleAlerts,
+                showHeatmap = false, // TELAS §2.2: sem mancha de calor (estigmatiza territórios)
+                onToggleHeatmap = {},
                 onPinClick = { viewModel.openIncidentDetail(it) },
                 onCenterOnUser = onCenterOnUser,
                 userLatitude = viewModel.userLatitude,
                 userLongitude = viewModel.userLongitude,
                 userAreaLabel = viewModel.userAreaLabel,
-                userLocationVersion = viewModel.userLocationVersion
+                userLocationVersion = viewModel.userLocationVersion,
+                fullBleed = true,
+                controlsBottomPadding = SheetPeekHeight,
+                modifier = Modifier.fillMaxSize()
             )
-        }
 
-        // Compact Live Weather (Open-Meteo/INMET/CGE-SP) & SSP-SP Smart Sampa Banner (No text wrapping!)
-        item {
-            PublicSafetyApisLiveBanner(
-                weather = viewModel.weatherTelemetry,
-                isRefreshing = viewModel.isRefreshingApis,
-                onRefresh = { viewModel.refreshPublicApis() }
-            )
-        }
-
-        viewModel.incidentActionMessage?.let { message ->
-            item(key = "action-message") {
-                LaunchedEffect(message) {
-                    kotlinx.coroutines.delay(5_000)
-                    viewModel.clearIncidentActionMessage()
-                }
-                Text(text = message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-
-        viewModel.userNotice?.let { notice ->
-            item {
-                Text(
-                    text = notice,
-                    color = when (viewModel.userNoticeTone) {
-                        NoticeTone.SUCCESS -> CitizenStatusColors.safe
-                        NoticeTone.INFO -> MaterialTheme.colorScheme.onSurfaceVariant
-                        NoticeTone.ERROR -> MaterialTheme.colorScheme.error
-                    },
-                    fontWeight = if (viewModel.userNoticeTone == NoticeTone.SUCCESS) FontWeight.SemiBold else FontWeight.Normal,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
-
-        // Category Filter Chips Row
-        item {
-            CategoryFilterChipsRow(
-                selectedCategory = viewModel.selectedCategoryFilter,
-                onSelectCategory = { viewModel.selectCategoryFilter(it) }
-            )
-        }
-
-        // Section Title "Alertas Recentes" + Quick "+ Reportar" CTA (Figma 32:656)
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Topo do mapa: Filtros e busca.
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .padding(RcSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(RcSpacing.xs)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Relatos da comunidade",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.ExtraBold
+                Row(horizontalArrangement = Arrangement.spacedBy(RcSpacing.xs), verticalAlignment = Alignment.CenterVertically) {
+                    MapOverlayButton(
+                        label = if (activeFilterCount > 0) "Filtros · $activeFilterCount" else "Filtros",
+                        icon = CitizenIcons.Layers,
+                        highlighted = activeFilterCount > 0,
+                        onClick = { showFilters = true }
                     )
-                    Text(
-                        text = when (viewModel.incidents.size) {
-                            0 -> "Nenhum relato por enquanto"
-                            1 -> "1 relato"
-                            else -> "${viewModel.incidents.size} relatos"
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Enviados por moradores. Não são confirmados pela polícia.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    MapOverlayButton(
+                        label = null,
+                        icon = CitizenIcons.Search,
+                        highlighted = showSearch,
+                        contentDescription = if (showSearch) "Fechar busca" else "Buscar relatos",
+                        onClick = {
+                            showSearch = !showSearch
+                            if (!showSearch) viewModel.updateSearchQuery("")
+                        }
                     )
                 }
-
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = BrandOrange,
-                    modifier = Modifier.clickable(onClick = onOpenReportSheet)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                if (showSearch) {
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 4.dp,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(
-                            imageVector = CitizenIcons.Add,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Reportar",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
+                        OutlinedTextField(
+                            value = viewModel.searchQuery,
+                            onValueChange = { viewModel.updateSearchQuery(it) },
+                            placeholder = { Text("Rua, estação ou tipo de relato") },
+                            singleLine = true,
+                            shape = MaterialTheme.shapes.medium,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
             }
         }
+    }
 
-        // Incident Alert Cards (Figma 32:658) — now immediately visible above the fold!
-        items(viewModel.incidents, key = { it.id }) { incident ->
-            FigmaIncidentAlertCard(
-                incident = incident,
-                onCardClick = { viewModel.openIncidentDetail(incident) },
-                onConfirmClick = { viewModel.confirmIncident(incident.id) }
-            )
-        }
-
-        if (viewModel.incidents.isEmpty()) {
-            item {
-                Text(
-                    text = if (viewModel.searchQuery.isNotBlank() || viewModel.selectedCategoryFilter != null) {
-                        "Nenhum relato com esse filtro."
-                    } else {
-                        "Ainda não há relatos nesta região. Viu algo? Toque em Reportar para avisar a vizinhança."
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 12.dp)
-                )
-            }
-        }
+    if (showFilters) {
+        HomeFiltersSheet(
+            initialCategories = selectedCategories,
+            initialRadiusKm = radiusKm,
+            previewCount = { categories, radius -> viewModel.incidents.count { matches(it, categories, radius) } },
+            onApply = { categories, radius ->
+                selectedCategoryNames = categories.map { it.name }
+                radiusKm = radius
+                showFilters = false
+            },
+            onDismiss = { showFilters = false }
+        )
     }
 
     if (selectedIncident != null) {
@@ -277,65 +345,205 @@ fun CitizenHomeScreen(
     }
 }
 
+/** Botão flutuante sobre o mapa (Filtros, busca). Fundo de superfície para ler sobre qualquer mapa. */
 @Composable
-private fun NeighborhoodSelectorRow(
-    areaLabel: String,
-    hasLocation: Boolean,
-    showSearch: Boolean,
-    onToggleSearch: () -> Unit,
-    onCenterOnUser: () -> Unit
+private fun MapOverlayButton(
+    label: String?,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    highlighted: Boolean,
+    onClick: () -> Unit,
+    contentDescription: String? = null
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    val scheme = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (highlighted) scheme.onSurface else scheme.surface,
+        contentColor = if (highlighted) scheme.surface else scheme.onSurface,
+        shadowElevation = 4.dp,
+        modifier = Modifier
+            .heightIn(min = RcSpacing.minTouch)
+            .semantics { if (contentDescription != null) this.contentDescription = contentDescription }
     ) {
-        Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = if (showSearch) BrandBlue else MaterialTheme.colorScheme.surfaceContainerHigh,
-            modifier = Modifier
-                .size(36.dp)
-                .clickable(onClick = onToggleSearch)
+        Row(
+            modifier = Modifier.padding(horizontal = if (label == null) 12.dp else 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(RcSpacing.xs)
         ) {
-            androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = CitizenIcons.Search,
-                    contentDescription = "Buscar relatos",
-                    tint = if (showSearch) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
+            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            if (label != null) Text(label, style = MaterialTheme.typography.labelLarge)
         }
+    }
+}
 
-        Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = BrandBlue.copy(alpha = 0.12f),
-            modifier = Modifier
-                .weight(1f)
-                .clickable(onClickLabel = "Atualizar minha localização", onClick = onCenterOnUser)
+/** Rótulo curto da condição do tempo para caber no clima pequeno do Início. */
+internal fun shortCondition(label: String): String = when {
+    label.contains("Tempestade", ignoreCase = true) -> "Tempestade"
+    label.contains("Chuva", ignoreCase = true) -> "Chuva"
+    label.contains("Garoa", ignoreCase = true) -> "Garoa"
+    label.contains("Nublado", ignoreCase = true) -> "Nublado"
+    label.contains("Limpo", ignoreCase = true) -> "Céu limpo"
+    else -> label.substringBefore(" ")
+}
+
+/** Clima em uma linha, pequeno (o detalhe do tempo não é o foco do Início). */
+@Composable
+private fun WeatherPill(weather: WeatherSafetyTelemetry, refreshing: Boolean) {
+    val scheme = MaterialTheme.colorScheme
+    val text = when {
+        weather.conditionLabel.isNotBlank() -> "${weather.temperatureCelsius.roundToInt()}° ${shortCondition(weather.conditionLabel)}"
+        refreshing -> "Clima…"
+        else -> "Clima indisponível"
+    }
+    Surface(shape = CircleShape, color = scheme.surfaceContainerHigh, contentColor = scheme.onSurface) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-                verticalAlignment = Alignment.CenterVertically
+            if (weather.isLiveNetworkData) {
+                Box(Modifier.size(8.dp).background(RcTone.SAFE.color, CircleShape))
+            }
+            Text(text, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+        }
+    }
+}
+
+/** Painel de filtros: o que mostrar (várias categorias) e o raio. Só aplica ao confirmar. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun HomeFiltersSheet(
+    initialCategories: Set<IncidentCategory>,
+    initialRadiusKm: Int,
+    previewCount: (Set<IncidentCategory>, Int) -> Int,
+    onApply: (Set<IncidentCategory>, Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var categories by remember { mutableStateOf(initialCategories) }
+    var radius by remember { mutableIntStateOf(initialRadiusKm) }
+    val count = previewCount(categories, radius)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outline) }
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = RcSpacing.md).padding(bottom = RcSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(RcSpacing.md)
+        ) {
+            Text("Filtros", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+
+            Text("O que mostrar", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(RcSpacing.xs),
+                verticalArrangement = Arrangement.spacedBy(RcSpacing.xs)
             ) {
-                Icon(
-                    imageVector = CitizenIcons.LocationPin,
-                    contentDescription = null,
-                    tint = BrandOrange,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = if (hasLocation) "Perto de você • $areaLabel" else "Buscando sua localização…",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                RcFilterChip("Tudo", selected = categories.isEmpty(), onClick = { categories = emptySet() })
+                IncidentCategory.entries.forEach { category ->
+                    RcFilterChip(
+                        label = category.label,
+                        selected = category in categories,
+                        onClick = { categories = if (category in categories) categories - category else categories + category }
+                    )
+                }
+            }
+
+            Text("Raio a partir de você", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(RcSpacing.xs)) {
+                RadiusOptionsKm.forEach { km -> RcFilterChip("$km km", selected = radius == km, onClick = { radius = km }) }
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = RcSpacing.xs)) {
+                RcTextButton("Limpar", onClick = {
+                    categories = emptySet()
+                    radius = DefaultRadiusKm
+                })
+                Spacer(Modifier.width(RcSpacing.xs))
+                RcPrimaryButton(
+                    text = when (count) {
+                        0 -> "Nenhum relato com esses filtros"
+                        1 -> "Mostrar 1 relato"
+                        else -> "Mostrar $count relatos"
+                    },
+                    onClick = { onApply(categories, radius) },
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
     }
+}
+
+@Composable
+private fun HomeAlertCard(incident: IncidentAlert, onOpen: () -> Unit, onConfirm: () -> Unit, onShare: () -> Unit) {
+    var viewerIndex by remember { mutableStateOf<Int?>(null) }
+    RcAlertCard(
+        category = incident.category.label,
+        tone = incident.category.tone,
+        distance = incident.distanceLabel,
+        title = incident.title,
+        whereWhen = "${streetOf(incident.address)} · ${incident.timeAgo}",
+        sources = buildList {
+            add(RcSource.Resident)
+            if (incident.confirmations > 0) add(RcSource.Confirmations(incident.confirmations))
+        },
+        onClick = onOpen,
+        primaryAction = (if (incident.userConfirmed) "✓ Você viu" else "Também vi") to onConfirm,
+        secondaryAction = "Compartilhar" to onShare,
+        media = if (incident.media.isEmpty()) null else {
+            {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(RcSpacing.xs)) {
+                    itemsIndexed(incident.media) { index, media ->
+                        RemoteMediaTile(url = media.url, isVideo = media.isVideo, size = 88.dp) { viewerIndex = index }
+                    }
+                }
+            }
+        }
+    )
+    viewerIndex?.let { start -> IncidentMediaViewer(media = incident.media, startIndex = start) { viewerIndex = null } }
+}
+
+@Composable
+private fun HomeListEnd(
+    isEmpty: Boolean,
+    filtering: Boolean,
+    radiusKm: Int,
+    canGrow: Boolean,
+    onGrowRadius: () -> Unit,
+    onClearFilter: () -> Unit,
+    onReport: () -> Unit
+) {
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = RcSpacing.sm),
+        verticalArrangement = Arrangement.spacedBy(RcSpacing.xs)
+    ) {
+        Text(
+            text = when {
+                isEmpty && filtering -> "Nada com esse filtro num raio de $radiusKm km."
+                isEmpty -> "Nenhum alerta num raio de $radiusKm km. Viu algo? Avise a vizinhança."
+                else -> "Isso é tudo num raio de $radiusKm km."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(RcSpacing.xs)) {
+            if (isEmpty && filtering) RcTextButton("Limpar filtro", onClick = onClearFilter)
+            if (canGrow) RcTextButton("Aumentar o raio", onClick = onGrowRadius)
+            if (isEmpty && !filtering) RcTextButton("Relatar", onClick = onReport)
+        }
+    }
+}
+
+/** Compartilhar um alerta pelo seletor do Android (a pessoa escolhe o app e confirma o envio). */
+private fun android.content.Context.shareIncident(incident: IncidentAlert) {
+    val text = "${incident.title} — ${streetOf(incident.address)} (${incident.timeAgo}). " +
+        "Relato de morador no app Rede Cidadã, não confirmado pela polícia."
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, text)
+    }
+    startActivity(Intent.createChooser(send, "Compartilhar alerta"))
 }
 
 @Composable
@@ -397,7 +605,8 @@ private fun InteractiveIncidentMapCard(
     userLatitude: Double?,
     userLongitude: Double?,
     userAreaLabel: String?,
-    userLocationVersion: Int
+    userLocationVersion: Int,
+    height: androidx.compose.ui.unit.Dp = 210.dp
 ) {
     CitizenInteractiveMapContainer(
         neighborhood = neighborhood,
@@ -412,382 +621,9 @@ private fun InteractiveIncidentMapCard(
         userLocationVersion = userLocationVersion,
         modifier = Modifier
             .fillMaxWidth()
-            .height(210.dp)
+            .height(height)
+            .clip(MaterialTheme.shapes.medium)
     )
-}
-
-@Composable
-private fun PublicSafetyApisLiveBanner(
-    weather: WeatherSafetyTelemetry,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit
-) {
-    if (!weather.isLiveNetworkData) {
-        WeatherUnavailableCard(isRefreshing = isRefreshing, onRefresh = onRefresh)
-        return
-    }
-    val riskLabel = when (weather.inmetAlertLevel) {
-        "LARANJA", "VERMELHO" -> "ALTO"
-        "AMARELO" -> "MÉDIO"
-        else -> "BAIXO"
-    }
-    val alertColor = when (weather.inmetAlertLevel) {
-        "LARANJA", "VERMELHO" -> BrandOrange
-        "AMARELO" -> CitizenStatusColors.warning
-        else -> CitizenStatusColors.safe
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        border = BorderStroke(1.dp, alertColor.copy(alpha = 0.45f))
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            // Single non-wrapping header row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = CitizenIcons.Storm,
-                        contentDescription = null,
-                        tint = alertColor,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "RISCO DE CHUVA E VENTO: $riskLabel",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = alertColor,
-                        fontWeight = FontWeight.ExtraBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    modifier = Modifier.clickable(onClick = onRefresh)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = CitizenIcons.CloudSync,
-                            contentDescription = "Sincronizar APIs",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (isRefreshing) "Atualizando…" else "Atualizar",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1
-                        )
-                    }
-                }
-            }
-
-            Text(
-                text = "Estimativa do app com o tempo medido agora (Open-Meteo). Não substitui os alertas da Defesa Civil.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "${String.format("%.1f", weather.temperatureCelsius)}°C • ${weather.conditionLabel}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "Atualizado às ${weather.lastUpdatedTime}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow
-                ) {
-                    Text(
-                        text = "${weather.precipitationMm}mm • ${weather.windGustsKmh.toInt()}km/h",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                        maxLines = 1
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CategoryFilterChipsRow(
-    selectedCategory: IncidentCategory?,
-    onSelectCategory: (IncidentCategory?) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        FilterChip(
-            selected = selectedCategory == null,
-            onClick = { onSelectCategory(null) },
-            label = { Text("Todos", fontWeight = FontWeight.Bold) }
-        )
-        IncidentCategory.entries.forEach { category ->
-            val isSelected = selectedCategory == category
-            FilterChip(
-                selected = isSelected,
-                onClick = { onSelectCategory(category) },
-                label = {
-                    Text(
-                        text = category.label,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                    )
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = categoryIcon(category),
-                        contentDescription = null,
-                        modifier = Modifier.size(15.dp)
-                    )
-                },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = category.tone.container,
-                    selectedLabelColor = category.tone.color,
-                    selectedLeadingIconColor = category.tone.color
-                )
-            )
-        }
-    }
-}
-
-@Composable
-private fun FigmaIncidentAlertCard(
-    incident: IncidentAlert,
-    onCardClick: () -> Unit,
-    onConfirmClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onCardClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Top Badges Row (Figma 32:661 - Category Pill + Green "✓ Verificado" Pill)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(7.dp),
-                        color = incident.category.tone.color
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = categoryIcon(incident.category),
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = incident.effectiveBadgeTitle,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color.White,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
-                    }
-
-                    if (incident.verified) {
-                        Surface(
-                            shape = RoundedCornerShape(7.dp),
-                            color = CitizenStatusColors.verifiedBadgeBg
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = CitizenIcons.VerifiedCheck,
-                                    contentDescription = null,
-                                    tint = CitizenStatusColors.safe,
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text(
-                                    text = "Verificado",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = CitizenStatusColors.safe,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
-
-                if (incident.isAnonymous) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = CitizenIcons.VisibilityOff,
-                            contentDescription = "Relato Anônimo",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text(
-                            text = "Anônimo",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            // Title & Description (Figma 32:670)
-            Text(
-                text = incident.title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.ExtraBold
-            )
-
-            Text(
-                text = incident.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            // Address Row (Figma 32:672)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = CitizenIcons.LocationPin,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(15.dp)
-                )
-                Spacer(modifier = Modifier.width(5.dp))
-                Text(
-                    text = incident.address,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            // Incident Status Feedback Bar (Addressing Figma UX Pain Point: "Falta de Retorno")
-            IncidentStatusFeedbackBar(
-                status = incident.status,
-                authority = incident.authorityAssigned
-            )
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            // Footer Metadata ("2 min atrás • 500m de você") + Confirm Action (Figma 32:681)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${incident.timeAgo}  •  ${incident.distanceLabel}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Surface(
-                    shape = RoundedCornerShape(9.dp),
-                    color = if (incident.userConfirmed) {
-                        BrandOrange.copy(alpha = 0.16f)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerLow
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        if (incident.userConfirmed) BrandOrange else MaterialTheme.colorScheme.outlineVariant
-                    ),
-                    modifier = Modifier.clickable(onClick = onConfirmClick)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = CitizenIcons.ThumbUp,
-                            contentDescription = "Confirmar ocorrência",
-                            tint = if (incident.userConfirmed) BrandOrange else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = "${incident.confirmations} confirmam",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (incident.userConfirmed) BrandOrange else MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-        }
-    }
 }
 
 @Composable
@@ -1012,38 +848,6 @@ private fun IncidentDetailBottomSheet(
                 androidx.compose.material3.TextButton(onClick = { showBlockDialog = true }) {
                     Text("Bloquear quem publicou", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WeatherUnavailableCard(isRefreshing: Boolean, onRefresh: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = CitizenIcons.Storm,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = if (isRefreshing) "Consultando o clima…" else "Clima indisponível agora.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f)
-            )
-            if (!isRefreshing) {
-                androidx.compose.material3.TextButton(onClick = onRefresh) { Text("Tentar de novo") }
             }
         }
     }
