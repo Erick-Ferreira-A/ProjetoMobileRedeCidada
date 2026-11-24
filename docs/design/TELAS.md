@@ -199,7 +199,7 @@ Referência: Reels/TikTok/Shorts, com o propósito trocado: **informar e não pr
 
 ### 2.8 Perfil (`profile`) — implementado em 24/11/2026
 
-Implementação atual: cabeçalho com foto/iniciais, nome, idade, bairro e e-mail · "Editar perfil" (com conta) ou "Entrar ou criar conta" (visitante) · card **Sua confiabilidade** (score 0–1000, faixa, barra e "Como funciona"; cálculo automático em integração, hoje todos começam com 940) · Meus relatos, Guardiões, Avaliações · Preferências · Fontes de dados · Sair / Excluir conta. **Editar perfil** (`profile/edit`): foto, nome, nascimento (idade, 18+), telefone, endereço; salvo no aparelho até o servidor aceitar os campos. **Documentos (CPF/CNPJ, RG):** visíveis e desativados — dependem de atualizar a política de privacidade (hoje diz que o app não coleta documentos).
+Implementação atual: cabeçalho com foto/iniciais, nome, idade, bairro e e-mail · "Editar perfil" (com conta) ou "Entrar ou criar conta" (visitante) · card **Sua confiabilidade** (score 0–1000, faixa, barra e "Como funciona"; cálculo automático em integração, hoje todos começam com 940) · Meus relatos, Guardiões, Avaliações · Preferências · Fontes de dados · Sair / Excluir conta. **Editar perfil** (`profile/edit`): foto, nome, nascimento (idade, 18+), telefone, endereço; salvo no aparelho até o servidor aceitar os campos. **Documentos (CPF/CNPJ, RG):** visíveis e desativados — **decisão do usuário em 24/11/2026: manter desativado.** Ativar exige antes atualizar a política de privacidade (hoje diz que o app não coleta documentos) e o formulário de segurança de dados da Play Store.
 
 Especificação original:
 
