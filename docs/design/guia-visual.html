@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guia Visual Rede Cidadã</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible+Next:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --marinho:#0A2540; --azul:#1D3B8B; --azul-hero:#1E3A8A; --laranja:#FF6B00; --laranja-claro:#FF8533; --laranja-texto:#B44900;
+  --bg:#F6F4EF; --surface:#FFFFFF; --surface-2:#EEEBE5; --texto:#1D1C1A; --texto-2:#5C574F; --linha:#DDD8CF; --contorno:#7D776D;
+  --primary:#1D3B8B; --on-primary:#FFFFFF; --acento:#FF6B00; --on-acento:#0A2540; --acento-texto:#B44900;
+  --critico:#B91D20; --critico-bg:#FFDAD6; --atencao:#8A5100; --atencao-bg:#FFDCBD; --seguro:#1B6D24; --seguro-bg:#A3F69C; --info:#005DB7; --info-bg:#D6E3FF;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#121110; --surface:#1B1A18; --surface-2:#252321; --texto:#EDEAE4; --texto-2:#B3ADA3; --linha:#36332F; --contorno:#8A847A;
+  --primary:#AFC1FF; --on-primary:#0A2540; --acento:#FF7A1A; --on-acento:#0A2540; --acento-texto:#FF9A55;
+  --critico:#FFB4AC; --critico-bg:#3F3330; --atencao:#FFB86E; --atencao-bg:#3F3326; --seguro:#88D982; --seguro-bg:#2C3929; --info:#A9C7FF; --info-bg:#32363D;
+}}
+:root[data-theme="dark"]{
+  --bg:#121110; --surface:#1B1A18; --surface-2:#252321; --texto:#EDEAE4; --texto-2:#B3ADA3; --linha:#36332F; --contorno:#8A847A;
+  --primary:#AFC1FF; --on-primary:#0A2540; --acento:#FF7A1A; --on-acento:#0A2540; --acento-texto:#FF9A55;
+  --critico:#FFB4AC; --critico-bg:#3F3330; --atencao:#FFB86E; --atencao-bg:#3F3326; --seguro:#88D982; --seguro-bg:#2C3929; --info:#A9C7FF; --info-bg:#32363D;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--texto);font-family:"Atkinson Hyperlegible Next",system-ui,sans-serif;font-size:17px;line-height:1.55}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px 96px}
+header.top{display:flex;justify-content:space-between;align-items:center;padding:20px 0;border-bottom:1px solid var(--linha);gap:12px}
+.marca{font-family:"Bricolage Grotesque";font-weight:800;letter-spacing:.02em;font-size:18px}
+.marca span{color:var(--acento-texto)}
+.versao{font-size:13px;color:var(--texto-2)}
+button.tema{font:inherit;font-size:14px;background:var(--surface);color:var(--texto);border:1px solid var(--linha);border-radius:999px;padding:8px 14px;cursor:pointer;min-height:40px}
+h1,h2,h3{font-family:"Bricolage Grotesque",sans-serif;line-height:1.1;margin:0}
+h1{font-size:clamp(40px,7vw,76px);font-weight:800;letter-spacing:-.02em;margin:64px 0 20px;max-width:14ch}
+h2{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.01em;margin:88px 0 8px}
+h3{font-size:20px;font-weight:600;margin:0 0 6px}
+.num{display:block;font-family:"Atkinson Hyperlegible Next";font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--acento-texto);margin-bottom:10px;text-transform:uppercase}
+p.lead{font-size:20px;max-width:58ch;color:var(--texto-2);margin:0}
+p{max-width:66ch}
+.nota{font-size:14px;color:var(--texto-2)}
+.decisao{border-left:4px solid var(--acento);background:var(--surface);padding:14px 18px;margin:20px 0;border-radius:0 10px 10px 0}
+.decisao b{color:var(--acento-texto)}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.bloco{background:var(--surface);border:1px solid var(--linha);border-radius:14px;padding:20px}
+.bloco ul{margin:8px 0 0;padding-left:18px}
+.bloco li{margin:4px 0}
+.tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--texto-2);margin-bottom:10px}
+table{width:100%;border-collapse:collapse;font-size:15px;margin-top:12px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--linha);vertical-align:top}
+th{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--texto-2)}
+.ok{color:var(--seguro);font-weight:700}.ruim{color:var(--critico);font-weight:700}
+.sw{border-radius:14px;overflow:hidden;border:1px solid var(--linha);background:var(--surface)}
+.sw .cor{height:92px;display:flex;align-items:flex-end;padding:10px 12px;font-weight:700;font-size:15px}
+.sw .info{padding:10px 12px;font-size:14px}
+.sw .info code{font-size:13px}
+.tons{display:grid;grid-template-columns:repeat(11,1fr);border-radius:10px;overflow:hidden;margin-top:10px}
+.tons div{height:38px;font-size:10px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px}
+/* tipografia */
+.par{background:var(--surface);border:1px solid var(--linha);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.par .nome{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acento-texto)}
+.par .t{font-size:34px;line-height:1.05}
+.par .c{font-size:16px;line-height:1.5;color:var(--texto-2)}
+.par .meta{font-size:13px;color:var(--texto-2);border-top:1px solid var(--linha);padding-top:10px}
+/* telefone */
+.fones{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px;margin-top:20px}
+.fone{border-radius:34px;border:8px solid #2F2D2A;background:var(--bg);overflow:hidden;max-width:340px;width:100%;margin:0 auto}
+.fone .st{height:26px;display:flex;justify-content:space-between;padding:6px 18px;font-size:11px;color:var(--texto-2)}
+.fone .scr{padding:6px 16px 20px;display:flex;flex-direction:column;gap:12px}
+.fone .ola{font-size:13px;color:var(--texto-2)}
+.fone .h{font-size:26px;line-height:1.1;font-weight:700}
+.clima{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--linha);border-radius:14px;padding:12px 14px}
+.clima .g{font-size:28px;font-weight:700}
+.clima .src{font-size:11px;color:var(--texto-2)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
+.chip.vivo{background:var(--seguro-bg);color:var(--seguro)}
+.alerta{background:var(--surface);border:1px solid var(--linha);border-radius:14px;padding:14px}
+.alerta .cat{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.alerta .ti{font-size:17px;font-weight:700;line-height:1.3;margin:4px 0 4px}
+.alerta .me{font-size:13px;color:var(--texto-2)}
+.btn{font-family:inherit;display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:14px;font-weight:700;font-size:16px;border:0;width:100%}
+.btn.pri{background:var(--primary);color:var(--on-primary)}
+.btn.ace{background:var(--acento);color:var(--on-acento)}
+.btn.sec{background:transparent;color:var(--texto);border:1.5px solid var(--contorno)}
+.mapa{height:120px;border-radius:14px;background:
+  linear-gradient(90deg,transparent 48%,var(--linha) 48% 52%,transparent 52%),
+  linear-gradient(0deg,transparent 58%,var(--linha) 58% 62%,transparent 62%),
+  linear-gradient(35deg,transparent 30%,var(--linha) 30% 33%,transparent 33%),
+  var(--surface-2);position:relative}
+.pin{position:absolute;width:14px;height:14px;border-radius:50%;border:3px solid var(--surface)}
+
+.specimen{display:grid;grid-template-columns:110px 1fr;gap:18px;align-items:center;background:var(--surface);border:1px solid var(--linha);border-radius:14px;padding:18px;margin-top:14px}
+.sp-t{font-family:"Bricolage Grotesque";font-weight:800;font-size:76px;line-height:1;color:var(--primary)}
+.sp-n{font-family:"Bricolage Grotesque";font-weight:600;font-size:22px}
+.sp-l{font-size:18px;margin-top:8px;overflow-wrap:anywhere}
+.tabela-rola{overflow-x:auto}
+table.escala td:first-child{font-family:ui-monospace,monospace;font-size:13px;color:var(--texto-2)}
+.esp div{display:flex;align-items:center;gap:12px;font-size:14px;margin:7px 0}
+.esp i{display:inline-block;height:14px;background:var(--acento);border-radius:2px;flex:none}
+.raios{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;font-size:14px}
+.raios div{display:flex;flex-direction:column;gap:6px}
+.raios span{display:block;height:44px;border:2px solid var(--primary);background:var(--surface-2)}
+.demo{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.dcol{display:flex;flex-direction:column;gap:8px}
+.leg{font-size:13px;color:var(--texto-2)}
+.btn{cursor:pointer;gap:8px;padding:0 18px;transition:filter .15s}
+.btn.txt{background:transparent;color:var(--primary);border:0}
+.btn.pressed{box-shadow:inset 0 0 0 999px rgba(255,255,255,.12)}
+.btn:disabled{opacity:.38;cursor:not-allowed}
+.btn.mini{min-height:40px;font-size:15px;width:auto;padding:0 14px}
+.spin{width:16px;height:16px;border-radius:50%;border:2.5px solid currentColor;border-right-color:transparent;animation:gira .8s linear infinite}
+@keyframes gira{to{transform:rotate(1turn)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.sos-demo{display:flex;align-items:center;justify-content:center;min-height:220px}
+.sos{width:150px;height:150px;border-radius:50%;border:0;background:var(--critico-bg);color:var(--critico);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:"Bricolage Grotesque";font-weight:800;font-size:38px;box-shadow:0 0 0 10px var(--surface),0 0 0 14px var(--critico);cursor:pointer}
+.sos small{font-family:"Atkinson Hyperlegible Next";font-size:13px;font-weight:700;margin-top:2px}
+.selos{display:flex;flex-wrap:wrap;gap:8px}
+.selo{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:5px 10px;border-radius:8px;line-height:1.2}
+.selo.vivo{background:var(--seguro-bg);color:var(--seguro);border-radius:999px}
+.selo.oficial{background:var(--info-bg);color:var(--info)}
+.selo.morador{background:var(--surface-2);color:var(--texto)}
+.selo.confirmado{background:transparent;color:var(--texto-2);border:1px solid var(--linha)}
+.selo.exemplo{background:transparent;color:var(--texto-2);border:1.5px dashed var(--texto-2)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.fchip{font:inherit;font-size:15px;font-weight:700;height:40px;padding:0 16px;border-radius:8px;border:1.5px solid var(--contorno);background:var(--surface);color:var(--texto);white-space:nowrap;cursor:pointer}
+.fchip.on{background:var(--texto);color:var(--bg);border-color:var(--texto)}
+.alerta.grande{padding:18px}
+.alerta .acoes{display:flex;gap:8px;margin-top:14px}
+.anat{margin:0;padding-left:20px}.anat li{margin:6px 0}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo label{font-weight:700;font-size:15px}
+.campo input,.campo textarea{font:inherit;font-size:17px;color:var(--texto);background:var(--surface);border:1.5px solid var(--contorno);border-radius:14px;padding:12px 14px;min-height:52px;resize:vertical}
+.campo input:focus,.campo textarea:focus{outline:2px solid var(--primary);outline-offset:1px}
+.campo .ajuda{font-size:14px;color:var(--texto-2)}
+.campo.erro input{border-color:var(--critico)}
+.campo.erro .ajuda{color:var(--critico);font-weight:700}
+.nav{display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border:1px solid var(--linha);border-radius:14px;padding:8px 4px;max-width:420px}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--texto-2);min-height:56px;justify-content:center}
+.nav .ic{width:56px;height:30px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.nav a.on{color:var(--texto)}
+.nav a.on .ic{background:var(--surface-2);color:var(--primary)}
+.estado{background:var(--surface);border:1px solid var(--linha);border-radius:14px;padding:16px}
+.estado .eh{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--texto-2);margin-bottom:10px}
+.sk{height:14px;border-radius:6px;background:var(--surface-2);margin:8px 0}
+@media (max-width:560px){.specimen{grid-template-columns:1fr}.sp-t{font-size:56px}}
+footer{margin-top:96px;font-size:13px;color:var(--texto-2);border-top:1px solid var(--linha);padding-top:16px}
+@media (max-width:560px){ .tons div{font-size:0} h2{margin-top:64px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div><div class="marca">REDE <span>CIDADÃ</span></div><div class="versao">Guia visual · v1.0 · 23/11/2026</div></div>
+  <button class="tema" id="tema" type="button">Alternar claro / escuro</button>
+</header>
+
+<h1>Informar sem alarmar.</h1>
+<p class="lead">Este é o começo do guia visual do app. Primeiro vêm o objetivo, o nicho e o público, porque são eles que decidem o tom, as cores e o que cada tela mostra. Depois, cor, tipografia, espaço e componentes. Os pontos marcados em laranja ainda dependem do grupo.</p>
+
+<!-- 01 -->
+<h2><span class="num">01 · Fundamentos</span>Por que o app existe</h2>
+<div class="grid g2" style="margin-top:20px">
+  <div class="bloco"><span class="tag">Problema</span>
+    <p style="margin:0">As informações sobre segurança, clima e transporte ficam espalhadas e nem sempre chegam a tempo de ajudar quem está se deslocando. Além disso, muita gente deixa de relatar o que viu por receio de se expor.</p>
+    <p class="nota">Fonte: roteiro da apresentação do grupo (out/2026).</p></div>
+  <div class="bloco"><span class="tag">Objetivo</span>
+    <p style="margin:0"><b>Ajudar quem anda pela cidade a decidir melhor o caminho</b>, reunindo em um lugar o que acontece perto: relatos da comunidade, clima, alagamentos e status do transporte. E dar à pessoa um jeito simples de avisar a família quando precisar.</p>
+    <p class="nota">O app não substitui 190, 193 e 199 e não promete segurança. O guia precisa deixar isso visível.</p></div>
+</div>
+
+<h3 style="margin-top:36px">Nicho</h3>
+<p><b>Informação hiperlocal de deslocamento e segurança comunitária para quem anda a pé e de transporte público em São Paulo.</b> Não é app de crime, nem de trânsito para carro, nem só de transporte. Fica no meio do caminho entre eles.</p>
+<table>
+  <thead><tr><th>O que a pessoa usa hoje</th><th>O que falta</th><th>Onde o Rede Cidadã entra</th></tr></thead>
+  <tbody>
+    <tr><td>Grupos de WhatsApp do bairro</td><td>Boato, sem local no mapa, sem filtro, expõe quem conta</td><td>Relato no mapa, anônimo por padrão, com confirmação da comunidade</td></tr>
+    <tr><td>Google Maps / Moovit</td><td>Mostram rota e horário, não o que está acontecendo no caminho</td><td>Clima, alagamento e relatos ao lado do status das linhas</td></tr>
+    <tr><td>Páginas de notícia local no Instagram</td><td>Chegam tarde e misturam tudo</td><td>Feed curto e geolocalizado, só da região</td></tr>
+    <tr><td>Apps de alerta de crime (ex.: Citizen, nos EUA)</td><td>Estudos mostram que geram medo e estigma</td><td><b>Posição de marca:</b> calmo, útil, sem sirene</td></tr>
+  </tbody>
+</table>
+
+<h3 style="margin-top:36px">Público</h3>
+<p>Apresentado pelo grupo: <b>moradores, estudantes e trabalhadores de São Paulo, principalmente quem depende do transporte público.</b> Na Play Store a decisão foi <b>18+</b>. A Zona Sul (Capão Redondo) é a região de demonstração.</p>
+<p class="nota">Os perfis abaixo são hipóteses montadas a partir disso, não pesquisa. Vale validar com 5–8 conversas com pessoas reais antes de fechar o guia.</p>
+<div class="grid g3" style="margin-top:12px">
+  <div class="bloco"><span class="tag">Quem volta à noite</span><h3>Estudante, 19–25</h3>
+    <ul><li>Desce na Estação Capão Redondo depois das 22h</li><li>Quer saber: "o caminho até em casa está tranquilo hoje?"</li><li>Usa o celular com uma mão, andando</li></ul>
+    <p class="nota">Telas-chave: Home/mapa, rotas, SOS discreto.</p></div>
+  <div class="bloco"><span class="tag">Quem sai cedo</span><h3>Trabalhador(a), 25–50</h3>
+    <ul><li>Ônibus + trem/metrô antes das 6h</li><li>Quer saber: "vai chover? a linha está normal?"</li><li>Olha rápido, em pé, às vezes com dados móveis fracos</li></ul>
+    <p class="nota">Telas-chave: clima, status dos trilhos, estado offline.</p></div>
+  <div class="bloco"><span class="tag">Quem cuida do bairro</span><h3>Morador(a), 30–65</h3>
+    <ul><li>Já participa de grupo de WhatsApp do bairro</li><li>Quer avisar sobre poste apagado, alagamento, risco</li><li>É guardião de alguém da família</li></ul>
+    <p class="nota">Telas-chave: relato, confirmação, feed, guardiões.</p></div>
+</div>
+
+<div class="decisao"><b>Decisão 1 — Quem é o público principal?</b> O desenho da Home muda conforme a resposta. Se for <i>quem se desloca</i>, a Home abre em "meu caminho agora" (clima + linhas + alertas no trajeto). Se for <i>quem cuida do bairro</i>, abre no mapa e no feed da vizinhança. Minha sugestão: <b>quem se desloca de transporte público</b>, porque é o que diferencia o app dos grupos de WhatsApp.</div>
+
+<h3 style="margin-top:36px">Princípios que saem disso</h3>
+<div class="grid g2" style="margin-top:12px">
+  <div class="bloco"><h3>1. Informar sem alarmar</h3><p class="nota" style="margin:0">Vermelho só para o que pede ação agora. A Home nunca abre em modo sirene.</p></div>
+  <div class="bloco"><h3>2. Um objetivo por tela</h3><p class="nota" style="margin:0">Cada tela responde a uma pergunta. O que não ajuda a responder vai para outra tela.</p></div>
+  <div class="bloco"><h3>3. Dizer de onde vem cada dado</h3><p class="nota" style="margin:0">"Ao vivo às 18h40", "relato de morador", "exemplo offline". Nunca "oficial" sem ser.</p></div>
+  <div class="bloco"><h3>4. Feito para uma mão, na rua</h3><p class="nota" style="margin:0">Alvos grandes na metade de baixo, leitura em 3 segundos, funciona com sol e com tela suja.</p></div>
+</div>
+
+<!-- 02 -->
+<h2><span class="num">02 · Cor</span>Marca fixa, funções claras</h2>
+<p>As quatro cores da marca continuam as mesmas. Fiz duas coisas: medi o contraste de cada uso e separei <b>cor de marca</b> (identidade e ação) de <b>cor de função</b> (o que está acontecendo).</p>
+
+<div class="grid g3" style="margin-top:16px">
+  <div class="sw"><div class="cor" style="background:#0A2540;color:#fff">Marinho</div><div class="info"><code>#0A2540</code> · base, títulos, fundo escuro da marca</div></div>
+  <div class="sw"><div class="cor" style="background:#1D3B8B;color:#fff">Azul</div><div class="info"><code>#1D3B8B</code> · ação principal no tema claro · branco por cima 10,2:1</div></div>
+  <div class="sw"><div class="cor" style="background:#FF6B00;color:#0A2540">Laranja</div><div class="info"><code>#FF6B00</code> · destaque e "Relatar" · <b>texto marinho por cima</b> 5,4:1</div></div>
+</div>
+
+<div class="decisao"><b>Achado — o laranja não aceita texto branco.</b> Branco sobre <code>#FF6B00</code> dá <b class="ruim">2,86:1</b> e não passa no mínimo de acessibilidade (4,5:1). Regra proposta: botão laranja sempre com texto marinho (5,44:1). Laranja como <i>texto</i> no tema claro usa o tom mais escuro <code>#B44900</code> (5,39:1).</div>
+
+<div class="decisao"><b>v1.0 — neutros quentes.</b> O escuro deixou de ser azul-marinho (<code>#0B0F17</code>, que dava cara de painel de ficção científica) e virou cinza com traço terra: fundo <code>#121110</code>, cards <code>#1B1A18</code>. O claro usa fundo de papel <code>#F6F4EF</code> e cards brancos. Sem preto puro e sem azul no fundo; a marca entra como acento.</div>
+<h3 style="margin-top:28px">Escalas tonais (geradas com a biblioteca oficial do Material)</h3>
+<div id="escalas"></div>
+
+<h3 style="margin-top:36px">Cores de função</h3>
+<div class="grid g2" style="margin-top:12px">
+  <div class="bloco" style="background:var(--critico-bg);border-color:transparent"><span class="chip" style="color:var(--critico);padding:0">CRÍTICO</span><p style="margin:6px 0 0;color:var(--texto)">Pede ação agora: SOS ativo, ocorrência grave a menos de 500 m.</p></div>
+  <div class="bloco" style="background:var(--atencao-bg);border-color:transparent"><span class="chip" style="color:var(--atencao);padding:0">ATENÇÃO</span><p style="margin:6px 0 0;color:var(--texto)">Vale saber antes de sair: chuva forte, linha com velocidade reduzida.</p></div>
+  <div class="bloco" style="background:var(--seguro-bg);border-color:transparent"><span class="chip" style="color:var(--seguro);padding:0">TRANQUILO</span><p style="margin:6px 0 0;color:var(--texto)">Situação normal ou resolvida. Também marca dado "ao vivo".</p></div>
+  <div class="bloco" style="background:var(--info-bg);border-color:transparent"><span class="chip" style="color:var(--info);padding:0">INFORMAÇÃO</span><p style="margin:6px 0 0;color:var(--texto)">Dica, aviso da comunidade, novidade no app.</p></div>
+</div>
+
+<div class="decisao"><b>Decisão 2 — Laranja é marca ou é alerta?</b> Hoje o app usa laranja para o nível de alerta "LARANJA" do clima <i>e</i> como cor da marca. Isso faz a marca parecer alarme. Sugestão: <b>laranja = marca e ação</b> (botão Relatar, destaques), e alerta usa só o âmbar de "Atenção".</div>
+
+<h3 style="margin-top:28px">Contraste medido (WCAG 2.x)</h3>
+<table>
+  <thead><tr><th>Uso</th><th>Razão</th><th>Resultado</th></tr></thead>
+  <tbody>
+    <tr><td>Branco sobre laranja <code>#FF6B00</code></td><td>2,86</td><td class="ruim">Falha</td></tr>
+    <tr><td>Marinho sobre laranja</td><td>5,44</td><td class="ok">AA</td></tr>
+    <tr><td>Branco sobre azul <code>#1D3B8B</code></td><td>10,24</td><td class="ok">AAA</td></tr>
+    <tr><td>Branco sobre marinho</td><td>15,54</td><td class="ok">AAA</td></tr>
+    <tr><td>Laranja-texto <code>#FF9A55</code> sobre fundo escuro <code>#121110</code></td><td>8,99</td><td class="ok">AAA</td></tr>
+    <tr><td>Azul claro <code>#AFC1FF</code> sobre fundo escuro</td><td>10,68</td><td class="ok">AAA</td></tr>
+    <tr><td>Texto principal sobre card (claro / escuro)</td><td>17,03 / 14,48</td><td class="ok">AAA</td></tr>
+    <tr><td>Texto de apoio sobre card (claro / escuro)</td><td>7,16 / 7,80</td><td class="ok">AAA</td></tr>
+    <tr><td>Cores de função sobre a superfície (claro / escuro)</td><td>≥ 6,44 / ≥ 10,18</td><td class="ok">AA</td></tr>
+    <tr><td>Contorno de botão, chip e campo (claro / escuro)</td><td>4,44 / 4,69</td><td class="ok">AA (componente)</td></tr>
+    <tr><td>Selo de função sobre o próprio fundo (claro / escuro)</td><td>≥ 4,98 / ≥ 7,11</td><td class="ok">AA</td></tr>
+  </tbody>
+</table>
+<p class="nota">AA = mínimo para texto normal (4,5:1). AAA = 7:1. Os pares foram calculados pela fórmula da WCAG 2.x.</p>
+
+<!-- 03 -->
+<h2><span class="num">03 · Tipografia</span>Calçada</h2>
+<p><b>Decidido em 23/11/2026.</b> Títulos em <b>Bricolage Grotesque</b>, que tem personalidade e um ar levemente feito à mão. Texto, rótulos e números em <b>Atkinson Hyperlegible Next</b>, desenhada pelo Braille Institute para quem enxerga pouco ou lê com pressa. As duas são gratuitas (Google Fonts) e cobrem o português.</p>
+
+<div class="specimen">
+  <div class="sp-t">Aa</div>
+  <div>
+    <div class="sp-n">Bricolage Grotesque</div>
+    <div class="nota">Só para títulos (Display, Headline, Title L). Pesos 600 e 800.</div>
+    <div class="sp-l" style="font-family:'Bricolage Grotesque';font-weight:800">ÁÉÍÓÚ ÂÊÔ ÃÕ Ç àèìòù 0123456789</div>
+  </div>
+</div>
+<div class="specimen">
+  <div class="sp-t" style="font-family:'Atkinson Hyperlegible Next';font-weight:700">Aa</div>
+  <div>
+    <div class="sp-n" style="font-family:'Atkinson Hyperlegible Next'">Atkinson Hyperlegible Next</div>
+    <div class="nota">Texto, botões, rótulos e números. Pesos 400 e 700. Letras parecidas (I l 1, O 0) têm desenhos diferentes de propósito.</div>
+    <div class="sp-l" style="font-family:'Atkinson Hyperlegible Next'">Il1 O0 rn m · 12 confirmações · 19° · 350 m · 18:40</div>
+  </div>
+</div>
+
+<h3 style="margin-top:28px">Escala</h3>
+<p class="nota">Valores em sp (Android). Os nomes seguem os papéis do Material 3, então viram <code>Typography</code> no Compose sem tradução.</p>
+<div class="tabela-rola"><table class="escala">
+  <thead><tr><th>Papel</th><th>Exemplo</th><th>Fonte · peso · tamanho/altura</th><th>Uso</th></tr></thead>
+  <tbody>
+    <tr><td>displaySmall</td><td><span style="font-family:'Bricolage Grotesque';font-weight:800;font-size:36px;line-height:40px">Boa noite</span></td><td>Bricolage 800 · 36/40</td><td>Só no onboarding</td></tr>
+    <tr><td>headlineMedium</td><td><span style="font-family:'Bricolage Grotesque';font-weight:800;font-size:28px;line-height:32px">Seu caminho está tranquilo</span></td><td>Bricolage 800 · 28/32</td><td>A frase-resumo de cada tela (uma por tela)</td></tr>
+    <tr><td>titleLarge</td><td><span style="font-family:'Bricolage Grotesque';font-weight:600;font-size:22px;line-height:28px">Alertas perto de você</span></td><td>Bricolage 600 · 22/28</td><td>Título de seção e de sheet</td></tr>
+    <tr><td>titleMedium</td><td><span style="font-weight:700;font-size:17px;line-height:23px">Poste apagado na saída da estação</span></td><td>Atkinson 700 · 17/23</td><td>Título de card</td></tr>
+    <tr><td>bodyLarge</td><td><span style="font-size:17px;line-height:26px">Prefira a calçada do lado dos comércios.</span></td><td>Atkinson 400 · 17/26</td><td>Texto corrido</td></tr>
+    <tr><td>bodyMedium</td><td><span style="font-size:15px;line-height:22px">12 confirmações · há 20 min</span></td><td>Atkinson 400 · 15/22</td><td>Metadados, apoio</td></tr>
+    <tr><td>labelLarge</td><td><span style="font-weight:700;font-size:16px;line-height:20px">Relatar agora</span></td><td>Atkinson 700 · 16/20</td><td>Botões</td></tr>
+    <tr><td>labelSmall</td><td><span style="font-weight:700;font-size:12px;line-height:16px;letter-spacing:.06em;text-transform:uppercase">Atenção · Linha 5</span></td><td>Atkinson 700 · 12/16 · caixa alta +6%</td><td>Categoria e selos (só textos curtos)</td></tr>
+  </tbody>
+</table></div>
+<div class="grid g2" style="margin-top:16px">
+  <div class="bloco"><span class="tag">Faça</span><ul><li>Uma frase-resumo em headline por tela, dizendo a resposta e não o nome da tela ("Seu caminho está tranquilo", não "Início").</li><li>No máximo dois pesos por card.</li><li>Teste com a fonte do sistema em 1,3× e 2,0×: nada pode cortar.</li></ul></div>
+  <div class="bloco"><span class="tag">Evite</span><ul><li>Bricolage em texto corrido ou abaixo de 20 sp.</li><li>Caixa alta em frases inteiras.</li><li>Cinza claro sobre cinza: use <code>onSurfaceVariant</code>, que já foi medido.</li></ul></div>
+</div>
+
+<!-- 04 -->
+<h2><span class="num">04 · Espaço e forma</span>Respiro, sem enfeite</h2>
+<div class="grid g2" style="margin-top:16px">
+  <div class="bloco"><h3>Grade de 4 dp</h3>
+    <div class="esp">
+      <div><i style="width:4px"></i>4 · ícone ↔ texto</div>
+      <div><i style="width:8px"></i>8 · dentro de selo e chip</div>
+      <div><i style="width:12px"></i>12 · entre itens de um card</div>
+      <div><i style="width:16px"></i>16 · margem lateral e padding de card</div>
+      <div><i style="width:24px"></i>24 · entre cards</div>
+      <div><i style="width:32px"></i>32 · entre seções</div>
+      <div><i style="width:48px"></i>48 · alvo de toque mínimo</div>
+    </div></div>
+  <div class="bloco"><h3>Raios</h3>
+    <div class="raios">
+      <div><span style="border-radius:8px"></span>8 · selo, chip</div>
+      <div><span style="border-radius:14px"></span>14 · card, botão, campo</div>
+      <div><span style="border-radius:24px 24px 0 0"></span>24 · sheet (só em cima)</div>
+      <div><span style="border-radius:999px"></span>pílula · status ao vivo</div>
+    </div>
+    <h3 style="margin-top:18px">Profundidade</h3>
+    <p class="nota" style="margin:0"><b>Duas linhas:</b> <code>linha</code> (#DDD8CF) só para separar e decorar cards; <code>contorno</code> (#7D776D claro / #8A847A escuro, ≥ 4,4:1) para a borda de tudo que se toca: botão secundário, chip, campo. A WCAG pede 3:1 para borda de componente.</p><p class="nota">Sem sombras grandes nem vidro fosco. Card = superfície + contorno de 1 dp. Só a sheet e o SOS ativo podem "subir" (sombra curta). No tema escuro, a profundidade vem do tom da superfície, não da sombra.</p></div>
+</div>
+
+<!-- 05 -->
+<h2><span class="num">05 · Componentes</span>Peças que se repetem</h2>
+<p>Cada componente tem uma função, regras e estados. As amostras usam as cores e as fontes definidas acima; alterne claro e escuro no topo.</p>
+
+<h3 style="margin-top:28px">Botões</h3>
+<div class="demo">
+  <div class="dcol"><button class="btn ace">Relatar agora</button><div class="leg"><b>Destaque</b> · laranja + texto marinho. A ação principal do app. <b>No máximo um por tela.</b></div></div>
+  <div class="dcol"><button class="btn pri">Ver meu trajeto</button><div class="leg"><b>Primário</b> · azul. A ação principal quando a tela não é de relato.</div></div>
+  <div class="dcol"><button class="btn sec">Compartilhar</button><div class="leg"><b>Secundário</b> · contorno. Alternativa ao lado de um primário.</div></div>
+  <div class="dcol"><button class="btn txt">Agora não</button><div class="leg"><b>Texto</b> · sair, cancelar, ver mais.</div></div>
+</div>
+<div class="demo" style="margin-top:12px">
+  <div class="dcol"><button class="btn pri pressed">Ver meu trajeto</button><div class="leg">Pressionado · camada de 12% por cima</div></div>
+  <div class="dcol"><button class="btn pri" disabled>Ver meu trajeto</button><div class="leg">Desativado · 38% de opacidade, com o motivo escrito por perto</div></div>
+  <div class="dcol"><button class="btn pri" aria-busy="true"><span class="spin"></span>Enviando…</button><div class="leg">Carregando · o rótulo diz o que está acontecendo</div></div>
+</div>
+
+<h3 style="margin-top:28px">SOS</h3>
+<div class="grid g2">
+  <div class="bloco sos-demo"><button class="sos" aria-label="Segure para acionar o SOS"><span>SOS</span><small>segure 2 s</small></button></div>
+  <div class="bloco"><p style="margin:0">O único lugar onde o vermelho aparece grande. <b>Segurar por 2 segundos</b> evita acionamento no bolso, e o anel enche enquanto a pessoa segura. Ao acionar, a tela diz exatamente o que aconteceu ("Mensagem pronta no WhatsApp para Mariana") e mostra 190 · 193 · 199 logo abaixo.</p>
+  <p class="nota">Em modo discreto: sem vibração longa, sem animação chamativa e tela escura.</p></div>
+</div>
+
+<h3 style="margin-top:28px">Selos de origem do dado</h3>
+<p class="nota" style="margin-top:0">Todo número ou alerta mostra de onde veio. É o princípio 3 na prática.</p>
+<div class="selos">
+  <span class="selo vivo">● Ao vivo 18:40</span>
+  <span class="selo oficial">Fonte: ARTESP</span>
+  <span class="selo morador">Relato de morador</span>
+  <span class="selo confirmado">✓ 12 confirmações</span>
+  <span class="selo exemplo">Exemplo · sem conexão</span>
+</div>
+
+<h3 style="margin-top:28px">Chips de filtro</h3>
+<div class="chips" role="group" aria-label="Filtrar alertas">
+  <button class="fchip on" aria-pressed="true">Todos</button>
+  <button class="fchip" aria-pressed="false">Segurança</button>
+  <button class="fchip" aria-pressed="false">Alagamento</button>
+  <button class="fchip" aria-pressed="false">Transporte</button>
+  <button class="fchip" aria-pressed="false">Iluminação</button>
+</div>
+<p class="nota">Rolagem horizontal, 40 dp de altura com área de toque de 48 dp. O selecionado inverte as cores (fundo marinho no claro, fundo claro no escuro), sem ícone de check.</p>
+
+<h3 style="margin-top:28px">Card de alerta</h3>
+<div class="grid g2">
+  <div class="alerta grande">
+    <div class="cat" style="color:var(--info)">Iluminação · 350 m</div>
+    <div class="ti">Poste apagado na saída da estação</div>
+    <div class="me">Rua Teodoro Sampaio · há 20 min</div>
+    <div class="selos" style="margin-top:10px"><span class="selo morador">Relato de morador</span><span class="selo confirmado">✓ 12</span></div>
+    <div class="acoes"><button class="btn sec mini">Também vi</button><button class="btn txt mini">Compartilhar</button></div>
+  </div>
+  <div class="bloco"><ol class="anat">
+    <li><b>Categoria · distância</b>, em labelSmall, na cor da categoria.</li>
+    <li><b>Título</b> descrevendo o fato. Nada de "URGENTE" ou exclamação.</li>
+    <li><b>Onde · quando</b>, em bodyMedium.</li>
+    <li><b>Selos de origem.</b></li>
+    <li><b>Ações</b>: no máximo duas; "Também vi" vem primeiro.</li>
+  </ol><p class="nota">O card inteiro abre o detalhe. A cor da categoria aparece só no rótulo, não no fundo nem numa borda lateral.</p></div>
+</div>
+
+<h3 style="margin-top:28px">Campo de texto</h3>
+<div class="grid g2">
+  <div class="campo"><label for="c1">O que está acontecendo?</label><textarea id="c1" rows="3">Poste apagado desde ontem</textarea><span class="ajuda">Não escreva nomes, placas nem endereços de casas.</span></div>
+  <div class="campo erro"><label for="c2">Onde?</label><input id="c2" value=""><span class="ajuda">Toque no mapa ou escreva uma rua para continuar.</span></div>
+</div>
+<p class="nota">O rótulo fica sempre visível em cima do campo (não some ao digitar). O erro diz como resolver, não só que algo deu errado.</p>
+
+<h3 style="margin-top:28px">Navegação</h3>
+<nav class="nav" aria-label="Navegação principal">
+  <a class="on"><span class="ic">⌂</span>Início</a>
+  <a><span class="ic">⇄</span>Mobilidade</a>
+  <a><span class="ic" style="background:var(--acento);color:var(--on-acento)">＋</span>Relatar</a>
+  <a><span class="ic">▶</span>Vídeos</a>
+  <a><span class="ic">◯</span>Perfil</a>
+</nav>
+<p class="nota">Quatro destinos e Relatar no centro, no alcance do polegar. Rótulos sempre visíveis. O <b>SOS</b> fica como escudo no topo de todas as abas: sempre a um toque, sem ocupar um lugar na barra. O vermelho grande só aparece dentro da tela de SOS. (Ícones aqui são marcadores; o app usa <code>CitizenIcons.kt</code>.)</p>
+
+<h3 style="margin-top:28px">Estados da tela</h3>
+<div class="grid g3">
+  <div class="estado"><div class="eh">Carregando</div><div class="sk"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:85%"></div><p class="nota">Blocos no formato do conteúdo. Sem spinner no meio da tela.</p></div>
+  <div class="estado"><div class="eh">Nada por perto</div><p style="margin:6px 0">Nenhum alerta num raio de 2 km na última hora.</p><button class="btn txt mini" style="justify-content:flex-start;padding:0">Aumentar o raio</button><p class="nota">Vazio também é uma boa notícia. Sem ilustração genérica.</p></div>
+  <div class="estado"><div class="eh">Sem conexão</div><p style="margin:6px 0">Mostrando o que foi carregado às 18:12.</p><span class="selo exemplo">Dados de 18:12</span><p class="nota">Diz desde quando. Nunca finge estar ao vivo.</p></div>
+</div>
+
+<div class="decisao"><b>Premissas em uso (decisões 1 e 2):</b> até o grupo confirmar, o guia segue: público principal = <i>quem se desloca de transporte público</i>; laranja = <i>marca e ação</i> (botão Relatar), nunca nível de alerta.</div>
+
+<h2><span class="num">06 · Próximo</span>Uma página por tela</h2>
+<p>Cada tela vai ter: a pergunta que ela responde, a frase-resumo, a anatomia com os componentes acima e o que fica de fora. Ordem proposta: Home → Relato → Detalhe do alerta → SOS e guardiões → Trajeto e trilhos → Vídeos → Perfil → Onboarding e localização → Login → Termos e exclusão de conta.</p>
+
+<footer>Guia visual v1.0 (23–24/11/2026), versão para ver e apresentar. As cores de função e as escalas tonais foram geradas com <code>@material/material-color-utilities</code> 0.3.0 (Apache-2.0), a mesma base do Material Theme Builder. Fontes: Google Fonts. Os perfis de público são hipóteses a validar. Fonte de verdade para quem programa: <code>docs/design/GUIA_VISUAL.md</code> e <code>docs/design/TELAS.md</code> no repositório. Telas já implementadas no app: navegação, SOS, Início, Vídeos e Perfil (ver TELAS.md).</footer>
+</div>
+
+<script>
+const tons = {
+  "Azul #1D3B8B":["#00164d","#01297a","#244191","#3f5aab","#5973c5","#738de1","#8ea8fe","#b5c4ff","#dbe1ff","#eff0ff","#fefbff"],
+  "Marinho #0A2540":["#001c37","#19324d","#314865","#49607e","#617998","#7b92b3","#95adce","#b0c8eb","#d2e4ff","#eaf1ff","#fdfcff"],
+  "Laranja #FF6B00":["#351000","#561f00","#7a3000","#a04100","#c85300","#f26500","#ff8c52","#ffb693","#ffdbcc","#ffede6","#fffbff"]
+};
+const nomes=[10,20,30,40,50,60,70,80,90,95,99];
+const esc=document.getElementById('escalas');
+for(const [n,arr] of Object.entries(tons)){
+  const d=document.createElement('div');d.style.marginTop='14px';
+  d.innerHTML='<div class="nota">'+n+'</div><div class="tons">'+arr.map((c,i)=>'<div style="background:'+c+';color:'+(i<5?'#fff':'#0A2540')+'">'+nomes[i]+'</div>').join('')+'</div>';
+  esc.appendChild(d);
+}
+const root=document.documentElement, bt=document.getElementById('tema');
+bt.addEventListener('click',()=>{
+  const atual=root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  root.setAttribute('data-theme', atual==='dark'?'light':'dark');
+});
+</script>
+</body>
+</html>
