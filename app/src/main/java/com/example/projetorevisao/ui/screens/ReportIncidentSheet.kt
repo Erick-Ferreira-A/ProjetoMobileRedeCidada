@@ -276,9 +276,9 @@ fun ReportIncidentModalSheet(
                             )
                         },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = category.badgeColor.copy(alpha = 0.18f),
-                            selectedLabelColor = category.badgeColor,
-                            selectedLeadingIconColor = category.badgeColor
+                            selectedContainerColor = category.tone.container,
+                            selectedLabelColor = category.tone.color,
+                            selectedLeadingIconColor = category.tone.color
                         )
                     )
                 }

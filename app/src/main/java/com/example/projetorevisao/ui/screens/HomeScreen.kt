@@ -589,9 +589,9 @@ private fun CategoryFilterChipsRow(
                     )
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = category.badgeColor.copy(alpha = 0.18f),
-                    selectedLabelColor = category.badgeColor,
-                    selectedLeadingIconColor = category.badgeColor
+                    selectedContainerColor = category.tone.container,
+                    selectedLabelColor = category.tone.color,
+                    selectedLeadingIconColor = category.tone.color
                 )
             )
         }
@@ -631,7 +631,7 @@ private fun FigmaIncidentAlertCard(
                 ) {
                     Surface(
                         shape = RoundedCornerShape(7.dp),
-                        color = incident.category.badgeColor
+                        color = incident.category.tone.color
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -872,7 +872,7 @@ private fun IncidentDetailBottomSheet(
             ) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = incident.category.badgeColor
+                    color = incident.category.tone.color
                 ) {
                     Text(
                         text = incident.effectiveBadgeTitle,

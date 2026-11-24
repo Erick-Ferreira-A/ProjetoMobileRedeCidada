@@ -2,80 +2,166 @@ package com.example.projetorevisao.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.compositeOver
 
-// Material 3 Expressive - Dark & Light Theme Palette (Figma PROJETO UX - IHC V2)
-val ObsidianBackground = Color(0xFF0B0F17)     // Deep Dark Background
-val SurfaceDarkHeader = Color(0xFF131B2E)      // Translucent TopBar / Header Surface
-val SurfaceDarkCard = Color(0xFF192238)        // Primary Card Background
-val SurfaceDarkElevated = Color(0xFF232F4D)    // Sub-card & Input Field Container
-val SurfaceBorderGlow = Color(0xFF2E3D66)      // 1dp Card Border Stroke
+// Guia visual v1.0 (docs/design/GUIA_VISUAL.md). Contraste de cada par medido pela WCAG 2.x.
 
-// Figma Official Brand Colors (Escudo Tutela / Rede Cidadã)
+// ── Marca ────────────────────────────────────────────────────────────────
 val BrandNavyDark = Color(0xFF0A2540)
 val BrandBlue = Color(0xFF1D3B8B)
 val BrandBlueHero = Color(0xFF1E3A8A)
 val BrandOrange = Color(0xFFFF6B00)
 val BrandOrangeLight = Color(0xFFFF8533)
 
-// M3 Expressive Accents & Category Badges (Figma 32:608)
-val AccentCyan = Color(0xFF0EA5E9)             // Alagamento na Via / Clima (Sky-500)
-val AccentRoseCritical = Color(0xFFEF4444)     // Incêndio / SOS Emergência (Red-500)
-val AccentAmberWarning = Color(0xFFF97316)     // Roubo / Alerta Laranja (Orange-500)
-val AccentEmeraldSafe = Color(0xFF10B981)      // Badge "✓ Verificado" & Operação Normal (Emerald-500)
-val AccentPurpleAI = Color(0xFF9333EA)         // Alerta de Tempestade & Gemini IA (Purple-600)
-val AccentIndigoTraffic = Color(0xFF3B82F6)    // Acidente de Trânsito (Blue-500)
-val AccentPoliceNavy = Color(0xFF1E3A8A)       // Atividade Policial Intensa (Navy-800)
+// ── Neutros quentes ──────────────────────────────────────────────────────
+// Claro: off-white de papel no fundo, branco só nos cards.
+internal val PaperBackground = Color(0xFFF6F4EF)
+internal val PaperSurface = Color(0xFFFFFFFF)
+internal val PaperContainer = Color(0xFFEEEBE5)
+internal val PaperContainerHigh = Color(0xFFE6E2DA)
+internal val PaperContainerHighest = Color(0xFFDDD8CF)
+internal val InkPrimary = Color(0xFF1D1C1A)
+internal val InkSecondary = Color(0xFF5C574F)
+internal val PaperOutline = Color(0xFF7D776D)
+internal val PaperLine = Color(0xFFDDD8CF)
 
-// Typography & Text Tokens
-val TextExpressivePrimary = Color(0xFFF8FAFC)  // High Contrast Text (Slate-50)
-val TextExpressiveSecondary = Color(0xFF94A3B8)// Muted Secondary Info (Slate-400)
-val TextExpressiveMuted = Color(0xFF64748B)    // Helper / Caption Text (Slate-500)
+// Escuro: cinzas com traço de amarelo-terra (sem azul, sem preto puro).
+internal val NightBackground = Color(0xFF121110)
+internal val NightSurface = Color(0xFF1B1A18)
+internal val NightContainer = Color(0xFF252321)
+internal val NightContainerHigh = Color(0xFF2F2D2A)
+internal val NightContainerHighest = Color(0xFF393632)
+internal val NightInkPrimary = Color(0xFFEDEAE4)
+internal val NightInkSecondary = Color(0xFFB3ADA3)
+internal val NightOutline = Color(0xFF8A847A)
+internal val NightLine = Color(0xFF36332F)
 
-// Backward Compatibility & Semantic Aliases
-val CitizenBackground = ObsidianBackground
-val CitizenSurface = SurfaceDarkCard
-val CitizenSurfaceElevated = SurfaceDarkElevated
-val AlertCritical = AccentRoseCritical
-val AlertWarning = AccentAmberWarning
-val AlertTransit = AccentCyan
-val StatusSafe = AccentEmeraldSafe
-val TextPrimary = TextExpressivePrimary
-val TextSecondary = TextExpressiveSecondary
-val TextMuted = TextExpressiveMuted
+/** Cores além do esquema do Material: acento da marca e cores de função. */
+@Immutable
+data class RcExtendedColors(
+    val accent: Color,
+    val onAccent: Color,
+    /** Laranja usado como texto. No claro, só sobre background/surface. */
+    val accentText: Color,
+    val critical: Color,
+    val criticalContainer: Color,
+    val warning: Color,
+    val warningContainer: Color,
+    val safe: Color,
+    val safeContainer: Color,
+    val info: Color,
+    val infoContainer: Color
+)
+
+internal val LightExtendedColors = RcExtendedColors(
+    accent = BrandOrange,
+    onAccent = BrandNavyDark,          // 5,44:1 — branco sobre o laranja daria 2,86:1
+    accentText = Color(0xFFB44900),
+    critical = Color(0xFFB91D20),
+    criticalContainer = Color(0xFFFFDAD6),
+    warning = Color(0xFF8A5100),
+    warningContainer = Color(0xFFFFDCBD),
+    safe = Color(0xFF1B6D24),
+    safeContainer = Color(0xFFC9F2C2),
+    info = Color(0xFF005DB7),
+    infoContainer = Color(0xFFD6E3FF)
+)
+
+private fun nightContainer(color: Color) = color.copy(alpha = 0.16f).compositeOver(NightSurface)
+
+internal val DarkExtendedColors = RcExtendedColors(
+    accent = Color(0xFFFF7A1A),
+    onAccent = BrandNavyDark,          // 5,96:1
+    accentText = Color(0xFFFF9A55),
+    critical = Color(0xFFFFB4AC),
+    criticalContainer = nightContainer(Color(0xFFFFB4AC)),
+    warning = Color(0xFFFFB86E),
+    warningContainer = nightContainer(Color(0xFFFFB86E)),
+    safe = Color(0xFF88D982),
+    safeContainer = nightContainer(Color(0xFF88D982)),
+    info = Color(0xFFA9C7FF),
+    infoContainer = nightContainer(Color(0xFFA9C7FF))
+)
+
+val LocalRcColors = staticCompositionLocalOf { LightExtendedColors }
+
+/** Acesso às cores estendidas: `RcTheme.colors.accent`. */
+object RcTheme {
+    val colors: RcExtendedColors
+        @Composable @ReadOnlyComposable
+        get() = LocalRcColors.current
+}
+
+/** Função de uma informação. A cor vem do tema; nunca escolha cor direto para um alerta. */
+enum class RcTone(internal val lightColor: Color) {
+    CRITICAL(LightExtendedColors.critical),
+    WARNING(LightExtendedColors.warning),
+    SAFE(LightExtendedColors.safe),
+    INFO(LightExtendedColors.info);
+
+    val color: Color
+        @Composable @ReadOnlyComposable
+        get() = when (this) {
+            CRITICAL -> RcTheme.colors.critical
+            WARNING -> RcTheme.colors.warning
+            SAFE -> RcTheme.colors.safe
+            INFO -> RcTheme.colors.info
+        }
+
+    val container: Color
+        @Composable @ReadOnlyComposable
+        get() = when (this) {
+            CRITICAL -> RcTheme.colors.criticalContainer
+            WARNING -> RcTheme.colors.warningContainer
+            SAFE -> RcTheme.colors.safeContainer
+            INFO -> RcTheme.colors.infoContainer
+        }
+}
+
+// ── Compatibilidade com as telas que ainda não migraram ──────────────────
+// As constantes abaixo apontam para as cores de função novas. Não use em código novo:
+// prefira RcTheme.colors e MaterialTheme.colorScheme.
+val AccentRoseCritical = Color(0xFFB91D20)
+val AccentAmberWarning = Color(0xFF8A5100)
+val AccentEmeraldSafe = Color(0xFF1B6D24)
+val AccentIndigoTraffic = Color(0xFF005DB7)
+val AccentPoliceNavy = BrandNavyDark
 
 object CitizenStatusColors {
-    private val isLight: Boolean
-        @Composable @ReadOnlyComposable
-        get() = MaterialTheme.colorScheme.background.luminance() > 0.5f
-
     val critical: Color
         @Composable @ReadOnlyComposable
-        get() = if (isLight) Color(0xFFC81E3A) else AccentRoseCritical
+        get() = RcTheme.colors.critical
 
     val warning: Color
         @Composable @ReadOnlyComposable
-        get() = if (isLight) Color(0xFFD95B00) else AccentAmberWarning
+        get() = RcTheme.colors.warning
 
     val safe: Color
         @Composable @ReadOnlyComposable
-        get() = if (isLight) Color(0xFF057A55) else AccentEmeraldSafe
+        get() = RcTheme.colors.safe
 
     val verifiedBadgeBg: Color
         @Composable @ReadOnlyComposable
-        get() = if (isLight) Color(0xFF10B981) else Color(0xFF059669)
+        get() = RcTheme.colors.safe
 
     val insight: Color
         @Composable @ReadOnlyComposable
-        get() = if (isLight) Color(0xFF6D28D9) else Color(0xFFC084FC)
+        get() = RcTheme.colors.info
 
     val flood: Color
         @Composable @ReadOnlyComposable
-        get() = if (isLight) Color(0xFF0284C7) else Color(0xFF38BDF8)
+        get() = RcTheme.colors.info
 
     val traffic: Color
         @Composable @ReadOnlyComposable
-        get() = if (isLight) Color(0xFF2563EB) else Color(0xFF60A5FA)
+        get() = RcTheme.colors.info
+
+    /** Mantido para chamadas antigas que comparam com o fundo. */
+    val isLight: Boolean
+        @Composable @ReadOnlyComposable
+        get() = MaterialTheme.colorScheme.background == PaperBackground
 }

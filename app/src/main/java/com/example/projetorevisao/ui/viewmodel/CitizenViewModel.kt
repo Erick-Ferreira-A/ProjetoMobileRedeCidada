@@ -22,6 +22,7 @@ import com.example.projetorevisao.data.session.SessionManager
 import com.example.projetorevisao.data.repository.PublicSafetyRepository
 import com.example.projetorevisao.data.remote.ExternalApiConnectionStatus
 import com.example.projetorevisao.data.remote.WeatherSafetyTelemetry
+import com.example.projetorevisao.ui.theme.RcTone
 import com.example.projetorevisao.ui.theme.AccentAmberWarning
 import com.example.projetorevisao.ui.theme.AccentEmeraldSafe
 import com.example.projetorevisao.ui.theme.AccentIndigoTraffic
@@ -36,43 +37,48 @@ import kotlinx.coroutines.CancellationException
 enum class IncidentCategory(
     val label: String,
     val badgeTitle: String,
-    val badgeColor: Color
+    /** Função da categoria (guia visual §2.1). A cor real vem do tema: use `tone.color` em composables. */
+    val tone: RcTone
 ) {
     ROUBO_FURTO(
         label = "Assalto / Roubo",
         badgeTitle = "ASSALTO / ROUBO",
-        badgeColor = AccentRoseCritical
+        tone = RcTone.CRITICAL
     ),
     INCENDIO(
         label = "Incêndio",
         badgeTitle = "INCÊNDIO",
-        badgeColor = BrandOrange
+        tone = RcTone.CRITICAL
     ),
     ALAGAMENTO(
         label = "Alagamento",
         badgeTitle = "ALAGAMENTO",
-        badgeColor = BrandBlueHero
+        tone = RcTone.WARNING
     ),
     TEMPESTADE(
         label = "Tempestade",
         badgeTitle = "TEMPESTADE",
-        badgeColor = AccentAmberWarning
+        tone = RcTone.WARNING
     ),
     TRANSITO(
         label = "Trânsito",
         badgeTitle = "TRÂNSITO",
-        badgeColor = AccentIndigoTraffic
+        tone = RcTone.WARNING
     ),
     OPERACAO_POLICIAL(
         label = "Polícia",
         badgeTitle = "AÇÃO POLICIAL",
-        badgeColor = AccentPoliceNavy
+        tone = RcTone.INFO
     ),
     UTILIDADE_PUBLICA(
         label = "Iluminação / Via",
         badgeTitle = "ILUMINAÇÃO / VIA",
-        badgeColor = AccentEmeraldSafe
-    )
+        tone = RcTone.INFO
+    );
+
+    /** Cor fixa do tema claro, só para o mapa web (fora do Compose). Em composables use `tone.color`. */
+    val badgeColor: Color get() = tone.lightColor
+
 }
 
 enum class IncidentStatus(val label: String, val stepIndex: Int) {

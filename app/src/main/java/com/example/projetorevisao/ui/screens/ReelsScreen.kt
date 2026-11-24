@@ -88,11 +88,11 @@ private fun MediaReportCard(incident: IncidentAlert) {
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(7.dp), color = incident.category.badgeColor) {
+                Surface(shape = RoundedCornerShape(8.dp), color = incident.category.tone.container) {
                     Text(
                         text = incident.category.label.uppercase(),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
+                        color = incident.category.tone.color,
                         fontWeight = FontWeight.ExtraBold,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
