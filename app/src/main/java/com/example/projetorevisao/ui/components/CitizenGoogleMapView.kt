@@ -42,6 +42,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
@@ -317,6 +318,8 @@ private fun LiveCartographicWebMapView(
     showHeatmap: Boolean
 ) {
     val center = centerLatLngForNeighborhood(neighborhood)
+    // Fundo enquanto os tiles carregam: segue o tema (neutro quente), não um azul fixo.
+    val loadingBackgroundHex = String.format("#%06X", MaterialTheme.colorScheme.surfaceContainerHigh.toArgb() and 0xFFFFFF)
 
     val markersJs = incidents.joinToString(separator = "\n") { alert ->
         val hexColor = String.format("#%06X", 0xFFFFFF and alert.category.badgeColor.value.toLong().shr(32).toInt())
@@ -341,7 +344,7 @@ private fun LiveCartographicWebMapView(
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
             <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
             <style>
-                html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; background: #14223D; }
+                html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; background: $loadingBackgroundHex; }
                 .leaflet-control-attribution { display: none !important; }
             </style>
         </head>

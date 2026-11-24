@@ -226,6 +226,8 @@ Referência: Reels/TikTok/Shorts, com o propósito trocado: **informar e não pr
 - "Pular" sempre visível e indicador de passo.
 - Botão de destaque "Continuar".
 
+**Achado de 23/11/2026:** hoje o link "Emergência? Ligar 190" fica cerca de 50 dp abaixo do botão principal no onboarding e na tela de localização. No teste, um toque destinado ao botão abriu o discador. **Regra:** atalho de emergência nunca fica a menos de 24 dp de outro alvo de toque nem na área onde o polegar repousa depois de tocar o botão principal. Nessas telas, ele vai para o topo (ao lado de "Pular"/"Voltar"), como ícone com rótulo.
+
 ### 2.10 Localização (`location`)
 
 - **Pergunta:** "Por que o app precisa da minha localização?"

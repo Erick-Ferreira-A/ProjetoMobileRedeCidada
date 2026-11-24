@@ -33,6 +33,7 @@ Reproduzido e resolvido assim em 20/11/2026. Não alterar configurações globai
 - Padrão: Pixel_8, 1080×2400, 420 dpi, `font_scale 1.0`. Não reduzir densidade/fonte para caber tudo numa imagem; conteúdo abaixo da dobra é por rolagem.
 - Capturar tema claro e escuro (`adb shell cmd uimode night yes|no`).
 - Proibido nos testes: tocar em SOS real, ligar 190/193/199, publicar relato real, enviar notificação.
+- **Antes de cada `adb shell input tap`:** conferir `dumpsys window | grep mCurrentFocus` (o app precisa estar em primeiro plano) e pegar as coordenadas de um `uiautomator dump` feito logo antes. Nunca tocar "às cegas" depois de uma transição. Em 23/11/2026 um toque no onboarding abriu o discador com 190 (link de emergência colado ao botão) e o toque seguinte caiu no botão "Call" do discador. No emulador a chamada vai para o modem simulado, mas o erro não pode se repetir. Use `MSYS_NO_PATHCONV=1` no Git Bash para caminhos `/sdcard`.
 
 ## Auditoria visual mínima
 Contraste (selos verdes, textos azuis, ícones no escuro), alvos ≥48dp, TalkBack/contentDescription, fonte 1.3–2.0, teclado aberto, telas pequenas, insets do sistema, estados loading/erro/offline.
