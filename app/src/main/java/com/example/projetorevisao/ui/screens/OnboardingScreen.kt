@@ -1,6 +1,9 @@
 package com.example.projetorevisao.ui.screens
 
 import android.content.res.Configuration
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import com.example.projetorevisao.ui.theme.BrandNavyDark
 import com.example.projetorevisao.ui.theme.BrandBlueHero
 import com.example.projetorevisao.ui.theme.BrandBlue
@@ -122,9 +125,11 @@ private fun OnboardingPager(onDone: () -> Unit) {
 
         HorizontalPager(state = pager, modifier = Modifier.weight(1f)) { index ->
             val page = pages[index]
+            // Rola quando a tela é baixa ou a fonte do sistema está grande.
             Column(
                 Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = RcSpacing.lg)
             ) {
                 // Título e apoio no topo; o pedaço do app embaixo.
@@ -137,15 +142,18 @@ private fun OnboardingPager(onDone: () -> Unit) {
                 Spacer(Modifier.height(RcSpacing.xs))
                 Text(page.body, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(RcSpacing.lg))
-                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.TopCenter) { page.preview() }
+                page.preview()
+                Spacer(Modifier.height(RcSpacing.lg))
             }
         }
 
         // Indicador de passo.
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
         Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
             modifier = Modifier
-                .padding(horizontal = RcSpacing.lg)
+                .fillMaxWidth()
+                .padding(top = RcSpacing.md)
                 .semantics { contentDescription = "Passo ${pager.currentPage + 1} de ${pages.size}" }
         ) {
             pages.indices.forEach { i ->
@@ -164,7 +172,7 @@ private fun OnboardingPager(onDone: () -> Unit) {
         // Base: ação principal e, à direita, Pular.
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(RcSpacing.md)
+            modifier = Modifier.fillMaxWidth().padding(start = RcSpacing.md, end = RcSpacing.md, top = RcSpacing.md, bottom = RcSpacing.md)
         ) {
             RcAccentButton(
                 text = if (last) "Começar" else "Continuar",
@@ -195,12 +203,12 @@ private fun BrandHeader() {
         Modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(top = RcSpacing.md, bottom = RcSpacing.lg),
+            .padding(top = RcSpacing.sm, bottom = RcSpacing.md),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             Modifier
-                .size(176.dp)
+                .size(140.dp)
                 .background(
                     Brush.radialGradient(
                         0f to glow.copy(alpha = glowStart),
@@ -211,7 +219,7 @@ private fun BrandHeader() {
             contentAlignment = Alignment.Center
         ) {
             // A parte branca do escudo fica um pouco translúcida para se misturar ao brilho.
-            RedeCidadaLogo(size = 68.dp, innerSurfaceColor = Color.White.copy(alpha = 0.92f))
+            RedeCidadaLogo(size = 60.dp, innerSurfaceColor = Color.White.copy(alpha = 0.92f))
         }
         Text(
             "Rede Cidadã",
@@ -249,7 +257,7 @@ private fun FeatureRow(icon: androidx.compose.ui.graphics.vector.ImageVector, to
             ) { androidx.compose.material3.Icon(icon, contentDescription = null, tint = tone.color, modifier = Modifier.size(22.dp)) }
             Spacer(Modifier.width(RcSpacing.sm))
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             }
         }
