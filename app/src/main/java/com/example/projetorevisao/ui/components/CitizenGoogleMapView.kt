@@ -44,6 +44,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.luminance
+import com.google.android.gms.maps.model.MapStyleOptions
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
@@ -266,6 +268,11 @@ private fun NativeGoogleMapsSdkView(
     }
     val context = LocalContext.current
     val showMyLocationDot = context.hasLocationPermission()
+    // Mapa no visual do app: neutros quentes no claro, tons escuros no tema escuro.
+    val isDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val mapStyle = remember(isDarkTheme) {
+        MapStyleOptions(if (isDarkTheme) MapStyle.GOOGLE_DARK else MapStyle.GOOGLE_LIGHT)
+    }
 
     LaunchedEffect(neighborhood, userLocationVersion) {
         cameraPositionState.animate(
@@ -279,6 +286,7 @@ private fun NativeGoogleMapsSdkView(
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             mapType = MapType.NORMAL,
+            mapStyleOptions = mapStyle,
             isTrafficEnabled = true,
             isBuildingEnabled = true,
             isMyLocationEnabled = showMyLocationDot
@@ -340,6 +348,11 @@ private fun LiveCartographicWebMapView(
     val currentOnPinClick by rememberUpdatedState(onPinClick)
     // Fundo enquanto os tiles carregam: segue o tema (neutro quente), não um azul fixo.
     val loadingBackgroundHex = String.format("#%06X", MaterialTheme.colorScheme.surfaceContainerHigh.toArgb() and 0xFFFFFF)
+    // Blocos do OpenStreetMap no visual do app (tons quentes; no tema escuro, mapa escuro).
+    val isDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val tileFilter = MapStyle.leafletTileFilter(isDarkTheme)
+    val attributionBg = if (isDarkTheme) "rgba(27,26,24,0.8)" else "rgba(246,244,239,0.8)"
+    val attributionFg = if (isDarkTheme) "#AFC1FF" else "#1D3B8B"
 
     val markersJs = incidents.joinToString(separator = "\n") { alert ->
         val hexColor = String.format("#%06X", 0xFFFFFF and alert.category.badgeColor.value.toLong().shr(32).toInt())
@@ -371,8 +384,9 @@ private fun LiveCartographicWebMapView(
                 html, body { height: 100%; width: 100%; margin: 0; padding: 0; background: $loadingBackgroundHex; }
                 /* Fixado nas bordas (recomendação do Leaflet): altura em % ficava 0 dentro do app. */
                 #map { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: $loadingBackgroundHex; }
-                .leaflet-control-attribution { font-size: 10px; background: rgba(255,255,255,0.75) !important; }
-                .leaflet-control-attribution a { color: #1D3B8B; }
+                .leaflet-tile-pane { filter: $tileFilter; }
+                .leaflet-control-attribution { font-size: 10px; background: $attributionBg !important; color: $attributionFg; }
+                .leaflet-control-attribution a { color: $attributionFg; }
             </style>
         </head>
         <body>

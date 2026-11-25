@@ -6,7 +6,7 @@ Atualizado em 25/11/2026. O código prevalece sobre este resumo.
 - Repositório: `Erick-Ferreira-A/ProjetoMobileRedeCidada`. Servidor e back-end são do **Fred** (Ktor + SQLite no Railway).
 - Redesign das telas: branch `agent/claude-design-system`, **PR #7** aberto para a `main`, aguardando revisão do Fred (PR #6 fechado, conteúdo incluído no #7).
 - Pasta do projeto (desde 24/11/2026): `C:\Users\Erick Rondonia\Documents\REDE CIDADA\`. Repo em `01_app\ProjetoMobileRedeCidada` (abrir este caminho no Android Studio). Índice em `00_LEIA-ME.md`; decisões, changelog, aprendizados, pendências e rotina de sessão em `08_conhecimento\`.
-- APKs de teste (não vão para o git): `C:\Users\Erick Rondonia\Documents\REDE CIDADA\03_apks\` — último: `RedeCidada-teste-2026-11-25-v7.apk`, apontando para o servidor do Railway.
+- APKs de teste (não vão para o git): `C:\Users\Erick Rondonia\Documents\REDE CIDADA\03_apks\` — último: `RedeCidada-teste-2026-11-25-v8.apk` (mapa no estilo do app, versão para a avaliação heurística), apontando para o servidor do Railway.
 - Gerar APK de teste: `.\gradlew.bat :app:assembleDebug -PBACKEND_URL=https://projetomobileredecidada-production.up.railway.app/api/v1` (com o workaround de loopback da skill `rede-cidada-validacao-mobile`).
 
 ## Documentos que mandam
@@ -27,7 +27,7 @@ Atualizado em 25/11/2026. O código prevalece sobre este resumo.
 | Navegação | Início · Mobilidade · Relatar · Vídeos · Perfil; escudo SOS no topo |
 | Onboarding | Brilho azul radial na logo (sem degradê vertical); passo 1 funções principais; passo 2 anônimo + score de confiabilidade; passo 3 SOS; rolável; "Pular" à direita; sem 190 |
 | Início | Mapa em tela cheia, botão Filtros (categorias + raio), painel de baixo com resumo, clima com ícone e relatos |
-| Mapa | Sem chave Google válida usa Leaflet + OpenStreetMap (pinos reais, centro na pessoa) |
+| Mapa | Sem chave Google válida usa Leaflet + OpenStreetMap (pinos reais, centro na pessoa). Os dois mapas seguem o visual do app (claro e escuro, `ui/components/MapStyle.kt`) |
 | SOS | Segurar 2 s; números 190/193/192/199 abrem o discador |
 | Vídeos | Feed vertical estilo Reels (toque pausa, toque duplo = "Também vi", sem som no início) |
 | Perfil | Foto/iniciais, score de confiabilidade (0–1000), atalhos, preferências, sair/excluir; Editar perfil salva no aparelho |
