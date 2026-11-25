@@ -67,7 +67,7 @@ Manter **Ktor no Railway** e fortalecer três pontos. Não reescrever o app para
 | Notificações | `notifications` + FCM |
 
 Ordem sugerida (cada etapa testável com os 15 usuários):
-1. Postgres + R2 + backup (base robusta).
+1. Postgres + R2 + backup (base robusta). **Postgres feito** no branch `agent/claude-postgres` (25/11/2026): Flyway, FKs, BOOLEAN/TIMESTAMPTZ; ainda sem PostGIS, R2 e backup.
 2. Perfil completo + score com histórico + avaliar notícia.
 3. Comentários + menções + push.
 4. Amigos/família + seguir páginas.

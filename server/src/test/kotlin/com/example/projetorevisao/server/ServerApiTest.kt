@@ -38,9 +38,8 @@ class ServerApiTest {
         @BeforeClass
         @JvmStatic
         fun setupDb() {
-            // Banco temporário: os testes não tocam no banco de desenvolvimento.
-            val dbFile = File.createTempFile("rede_cidada_test", ".db").apply { deleteOnExit() }
-            System.setProperty("DATABASE_PATH", dbFile.absolutePath)
+            // Postgres embutido e temporário: os testes não tocam em nenhum banco real.
+            System.setProperty("DATABASE_URL", TestDatabase.jdbcUrl("api_test"))
             System.setProperty("JWT_SECRET", "test-secret-com-pelo-menos-32-caracteres-ok")
             System.setProperty("SEED_DEMO_DATA", "true")
             System.setProperty("MEDIA_DIR", java.nio.file.Files.createTempDirectory("rc_media").toString())
@@ -171,7 +170,7 @@ class ServerApiTest {
         val sha256OfSenha123 = "55a5e9e78207b4df8699d60886fa070079463547b095d1a05bc719bb4e6cd251"
         DatabaseFactory.getConnection().use { conn ->
             conn.prepareStatement(
-                "INSERT INTO users (id, name, email, cpf_masked, password_hash, neighborhood, created_at) VALUES (?, 'Legado', ?, '***', ?, 'Centro', 0)"
+                "INSERT INTO users (id, name, email, password_hash, neighborhood) VALUES (?, 'Legado', ?, ?, 'Centro')"
             ).use {
                 it.setString(1, "usr-${UUID.randomUUID()}")
                 it.setString(2, email)
@@ -359,6 +358,28 @@ class ServerApiTest {
         val fake = "isto nao e uma imagem de verdade".toByteArray()
         assertEquals(HttpStatusCode.BadRequest, client.uploadMedia(incidentId, owner, fake, "image/jpeg").status)
         assertEquals(HttpStatusCode.BadRequest, client.uploadMedia(incidentId, owner, jpeg, "application/pdf").status)
+    }
+
+    @Test
+    fun deletedAccountLeavesIncidentAndCommentsAnonymous() = testApplication {
+        application { module() }
+        val email = uniqueEmail()
+        val author = client.registerNewUser(email)
+        val incidentId = client.createIncident(author, "Relato que fica")
+        assertEquals(HttpStatusCode.Created, client.postJson("/api/v1/incidents/$incidentId/comments", """{"content":"Com nome 🚨 cuidado","isAnonymous":false}""", author).status)
+        assertEquals(HttpStatusCode.Created, client.postJson("/api/v1/incidents/$incidentId/comments", """{"content":"Sem nome","isAnonymous":true}""", author).status)
+        assertTrue(client.get("/api/v1/incidents/$incidentId/comments").bodyAsText().contains("Teste SOS"))
+        assertTrue(Regex(""""commentsCount"\s*:\s*2""").containsMatchIn(client.feed()))
+
+        assertEquals(HttpStatusCode.OK, client.postJson("/api/v1/auth/delete-account", """{"password":"senhaForte1"}""", author).status)
+
+        // O relato e os comentários continuam, sem ligação com a pessoa.
+        assertTrue(client.feed().contains("Relato que fica"))
+        val comments = client.get("/api/v1/incidents/$incidentId/comments").bodyAsText()
+        assertFalse(comments.contains("Teste SOS"))
+        assertTrue(comments.contains("Cidadão Colaborador"))
+        assertTrue(comments.contains("Cidadão Anônimo"))
+        assertTrue(comments.contains("🚨")) // UTF-8 de ponta a ponta
     }
 
     private suspend fun HttpClient.createIncident(token: String, title: String = "Relato ${UUID.randomUUID()}"): String {

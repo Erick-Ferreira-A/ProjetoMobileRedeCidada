@@ -81,7 +81,7 @@ class MediaRepository {
                 stmt.setString(4, target.name)
                 stmt.setString(5, mime)
                 stmt.setLong(6, size)
-                stmt.setLong(7, System.currentTimeMillis())
+                stmt.setTimestamp(7, java.sql.Timestamp(System.currentTimeMillis()))
                 stmt.executeUpdate()
             }
         }

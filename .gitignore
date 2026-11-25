@@ -26,3 +26,4 @@ keystore.properties
 server/uploads/
 server/secrets.properties
 server/build/
+server/data/

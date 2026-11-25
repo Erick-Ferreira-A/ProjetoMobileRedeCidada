@@ -1,22 +1,29 @@
 # Servidor Backend - Rede Cidadã SP
 
-Servidor de API RESTful em **Kotlin** com **Ktor Server 3.6.0** (Engine Netty) e banco de dados **SQLite** (`rede_cidada_server.db`) para o ecossistema do aplicativo **Rede Cidadã SP** (Segurança Comunitária e Mobilidade Urbana em São Paulo).
+Servidor de API RESTful em **Kotlin** com **Ktor Server 3.6.0** (Engine Netty) e banco de dados **PostgreSQL** (esquema versionado com Flyway em `src/main/resources/db/migration`) para o ecossistema do aplicativo **Rede Cidadã SP** (Segurança Comunitária e Mobilidade Urbana em São Paulo).
 
 ---
 
 ## 🚀 Como Executar o Servidor
 
-Você pode iniciar o servidor backend diretamente pelo Gradle a partir da raiz do projeto:
+No PC, use a tarefa `runLocal`: ela liga um **Postgres embutido** (não precisa instalar Postgres nem Docker)
+e guarda os dados em `server/data/pg-local` (fora do Git). Na primeira vez, ela baixa os binários do Postgres.
 
 ### No Windows (PowerShell / CMD):
 ```powershell
-.\gradlew.bat :server:run
+.\gradlew.bat :server:runLocal
 ```
 
 ### No Linux / macOS:
 ```bash
-./gradlew :server:run
+./gradlew :server:runLocal
 ```
+
+Para usar um Postgres seu, rode `:server:run` com a variável `DATABASE_URL`
+(`postgresql://usuario:senha@host:5432/banco` ou `jdbc:postgresql://...`).
+
+**Mudar o esquema:** crie um arquivo novo `src/main/resources/db/migration/V2__o_que_muda.sql`.
+Nunca edite uma migração que já rodou em produção: o Flyway confere e o servidor não sobe.
 
 O servidor será iniciado na porta **`8080`** (ou na porta definida pela variável de ambiente `PORT`):
 - **Base URL**: `http://localhost:8080/api/v1`
@@ -31,8 +38,10 @@ O repositório já traz `railway.json` (na raiz) e `server/Dockerfile`. O Railwa
 
 1. **New Project → Deploy from GitHub repo** → escolha `ProjetoMobileRedeCidada` e o branch a publicar.
    O Railway lê o `railway.json` e usa o Dockerfile sozinho.
-2. **Volume (obrigatório):** no serviço, *Attach Volume* com o caminho de montagem **`/data`**.
-   É onde ficam o banco (`/data/rede_cidada.db`) e as fotos/vídeos (`/data/uploads`). Sem volume, tudo some a cada deploy.
+2. **Postgres:** no projeto, *New → Database → PostgreSQL*. No serviço do servidor, crie a variável
+   `DATABASE_URL` com o valor `${{Postgres.DATABASE_URL}}` (referência ao banco; a senha não fica escrita).
+   **Volume (obrigatório):** *Attach Volume* com o caminho **`/data`**, onde ficam as fotos e vídeos (`/data/uploads`).
+   Sem volume, os anexos somem a cada deploy.
 3. **Variables** do serviço:
 
    | Variável | Valor |
@@ -42,7 +51,8 @@ O repositório já traz `railway.json` (na raiz) e `server/Dockerfile`. O Railwa
    | `SPTRANS_TOKEN` | token do Olho Vivo |
    | `ARTESP_API_KEY` | chave da API Trilhos |
 
-   `APP_ENV=production`, `TRUST_PROXY=true`, `SEED_DEMO_DATA=false`, `DATABASE_PATH` e `MEDIA_DIR` já vêm do Dockerfile.
+   `APP_ENV=production`, `TRUST_PROXY=true`, `SEED_DEMO_DATA=false` e `MEDIA_DIR` já vêm do Dockerfile.
+   A troca do SQLite antigo para o Postgres está em [`MIGRACAO_POSTGRES.md`](MIGRACAO_POSTGRES.md).
 
    Para gerar um `JWT_SECRET` no Windows (PowerShell):
    ```powershell
@@ -76,7 +86,8 @@ server/
     │   ├── kotlin/com/example/projetorevisao/server/
     │   │   ├── Application.kt          # Ponto de entrada e plugins do Ktor
     │   │   ├── database/
-    │   │   │   └── DatabaseFactory.kt  # Conexão SQLite, schemas e dados de exemplo (seed)
+    │   │   │   ├── DatabaseFactory.kt  # Pool de conexões (HikariCP), Flyway e conta demo
+    │   │   │   └── SqliteImporter.kt   # Cópia única do SQLite antigo para o Postgres
     │   │   ├── models/
     │   │   │   └── Models.kt           # DTOs e modelos serializáveis JSON
     │   │   ├── repository/
@@ -116,8 +127,10 @@ server/
 |---|---|---|
 | `APP_ENV` | `development` | Em `production`, `JWT_SECRET` é obrigatório e os dados de demonstração ficam desligados |
 | `JWT_SECRET` | aleatório por execução | Mínimo de 32 caracteres. Sem ele, os tokens deixam de valer quando o servidor reinicia |
-| `SEED_DEMO_DATA` / `SEED_DEMO_PASSWORD` | `true` / `senha123` | Conta demo `cidadao@redecidada.sp.gov.br` |
-| `DATABASE_PATH` | `rede_cidada_server.db` | Arquivo SQLite |
+| `SEED_DEMO_DATA` / `SEED_DEMO_PASSWORD` | `true` / `senha123` | Conta demo `demo@redecidada.app` |
+| `DATABASE_URL` | obrigatória | Postgres: formato do Railway (`postgresql://...`) ou `jdbc:postgresql://...` |
+| `DB_POOL_SIZE` | `5` | Conexões abertas ao mesmo tempo com o banco |
+| `MIGRATE_FROM_SQLITE` | vazio | Caminho do SQLite antigo: copia os dados uma vez, se o Postgres estiver vazio |
 
 ### 1. Autenticação e Perfis (`/api/v1/auth`)
 
@@ -185,16 +198,19 @@ Resposta de login, cadastro e refresh: `{"accessToken", "refreshToken", "tokenTy
 
 ---
 
-## 🗄️ Banco de Dados SQLite (`rede_cidada_server.db`)
+## 🗄️ Banco de Dados PostgreSQL
 
-O servidor cria e gerencia as seguintes tabelas automaticamente ao iniciar:
-1. `users`: Cadastro de cidadãos, senhas em hash BCrypt, bairro e pontuação de confiança.
-2. `incidents`: Relatos de ocorrências comunitárias, categorias, coordenadas, status e recomendações geradas.
-3. `comments`: Comentários comunitários vinculados a cada ocorrência.
-4. `reels`: Vídeos e dicas oficiais com contagem de curtidas e visualizações.
-5. `sos_alerts`: Histórico de chamados de emergência e unidades despachadas.
-6. `guardians`: Contatos de emergência e rede de proteção familiar.
-7. `refresh_tokens`: Sessões ativas (hash SHA-256 do refresh token, validade e revogação).
+O esquema fica em `src/main/resources/db/migration` e o Flyway aplica as migrações ao iniciar:
+1. `users`: cadastro, senha em hash BCrypt, bairro. E-mail único sem diferenciar maiúsculas.
+2. `incidents`: relatos (categoria, coordenadas, anonimato, moderação). Confirmações e comentários são contados na consulta.
+3. `incident_media`: referência das fotos e vídeos (o arquivo fica em `MEDIA_DIR`).
+4. `comments`: comentários, ligados ao autor (`author_id`) com opção de anônimo.
+5. `incident_confirmations`, `incident_reports`, `user_blocks`: "eu também vi", denúncias e bloqueios.
+6. `guardians` e `sos_alerts`: contatos de emergência e histórico de SOS.
+7. `refresh_tokens`: sessões ativas (só o hash SHA-256 do token).
+
+**Excluir conta** é um único `DELETE FROM users`: as FKs com `CASCADE` apagam o que é pessoal e as com
+`SET NULL` deixam relatos, anexos e comentários públicos sem ligação com a pessoa.
 
 ---
 
