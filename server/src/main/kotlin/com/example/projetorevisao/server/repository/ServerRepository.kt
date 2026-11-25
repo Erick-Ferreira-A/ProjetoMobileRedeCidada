@@ -2,6 +2,7 @@ package com.example.projetorevisao.server.repository
 
 import com.example.projetorevisao.server.database.DatabaseFactory
 import com.example.projetorevisao.server.models.*
+import java.sql.Timestamp
 import java.util.UUID
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -18,7 +19,7 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
                 stmt.setString(1, userId)
                 val rs = stmt.executeQuery()
                 if (rs.next()) {
-                    val anonDefault = rs.getInt("anonymous_default") == 1
+                    val anonDefault = rs.getBoolean("anonymous_default")
                     val geofence = rs.getFloat("geofence_radius")
 
                     fun count(sql: String): Int = conn.prepareStatement(sql).use { st ->
@@ -56,7 +57,7 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
             }
             req.anonymousReportingDefault?.let { a ->
                 conn.prepareStatement("UPDATE users SET anonymous_default = ? WHERE id = ?").use {
-                    it.setInt(1, if (a) 1 else 0)
+                    it.setBoolean(1, a)
                     it.setString(2, userId)
                     it.executeUpdate()
                 }
@@ -81,9 +82,12 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
     fun getIncidents(neighborhoodFilter: String?, categoryFilter: String?, query: String?, viewerId: String? = null): List<IncidentDto> {
         val list = mutableListOf<IncidentDto>()
         DatabaseFactory.getConnection().use { conn ->
-            var sql = "SELECT *, " +
+            // Contadores calculados na consulta (no SQLite eram colunas soltas que podiam ficar erradas).
+            var sql = "SELECT incidents.*, " +
+                "(SELECT COUNT(*) FROM incident_confirmations c WHERE c.incident_id = incidents.id) AS confirmations, " +
+                "(SELECT COUNT(*) FROM comments m WHERE m.incident_id = incidents.id) AS comments_count, " +
                 (if (viewerId != null) "EXISTS(SELECT 1 FROM incident_confirmations c WHERE c.incident_id = incidents.id AND c.user_id = ?)"
-                else "0") + " AS viewer_confirmed FROM incidents WHERE hidden = 0"
+                else "FALSE") + " AS viewer_confirmed FROM incidents WHERE NOT hidden"
             val params = mutableListOf<String>()
             if (viewerId != null) {
                 params.add(viewerId)
@@ -93,8 +97,9 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
                 params.add(viewerId)
             }
 
+            // ILIKE: sem diferenciar maiúsculas, como o LIKE do SQLite fazia.
             if (!neighborhoodFilter.isNullOrEmpty()) {
-                sql += " AND neighborhood LIKE ?"
+                sql += " AND neighborhood ILIKE ?"
                 params.add("%$neighborhoodFilter%")
             }
             if (!categoryFilter.isNullOrEmpty()) {
@@ -102,7 +107,7 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
                 params.add(categoryFilter)
             }
             if (!query.isNullOrEmpty()) {
-                sql += " AND (title LIKE ? OR description LIKE ? OR address LIKE ?)"
+                sql += " AND (title ILIKE ? OR description ILIKE ? OR address ILIKE ?)"
                 params.add("%$query%")
                 params.add("%$query%")
                 params.add("%$query%")
@@ -113,31 +118,33 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
                 params.forEachIndexed { index, p -> stmt.setString(index + 1, p) }
                 val rs = stmt.executeQuery()
                 while (rs.next()) {
+                    val createdAt = rs.getTimestamp("created_at").time
+                    val category = rs.getString("category")
                     list.add(
                         IncidentDto(
                             id = rs.getString("id"),
-                            category = rs.getString("category"),
+                            category = category,
                             customBadgeTitle = rs.getString("custom_badge_title"),
                             title = rs.getString("title"),
                             description = rs.getString("description"),
                             address = rs.getString("address"),
                             neighborhood = rs.getString("neighborhood"),
-                            distanceMeters = rs.getInt("distance_meters"),
-                            timeAgo = timeAgoLabel(rs.getLong("created_at")),
-                            verified = rs.getInt("verified") == 1,
+                            distanceMeters = 0, // a distância é calculada no app, com o GPS de quem vê
+                            timeAgo = timeAgoLabel(createdAt),
+                            verified = rs.getBoolean("verified"),
                             confirmations = rs.getInt("confirmations"),
                             commentsCount = rs.getInt("comments_count"),
-                            sharesCount = rs.getInt("shares_count"),
+                            sharesCount = 0,
                             status = rs.getString("status"),
-                            authorityAssigned = rs.getString("authority_assigned"),
-                            isAnonymous = rs.getInt("is_anonymous") == 1,
-                            mapXFraction = rs.getFloat("map_x_fraction"),
-                            mapYFraction = rs.getFloat("map_y_fraction"),
+                            authorityAssigned = AUTHORITY_NOTICE,
+                            isAnonymous = rs.getBoolean("is_anonymous"),
+                            mapXFraction = 0.5f,
+                            mapYFraction = 0.5f,
                             latitude = rs.getDouble("latitude"),
                             longitude = rs.getDouble("longitude"),
-                            aiSafetyRecommendation = rs.getString("ai_safety_recommendation"),
-                            userConfirmed = rs.getInt("viewer_confirmed") == 1,
-                            createdAtEpochMs = rs.getLong("created_at")
+                            aiSafetyRecommendation = safetyTipFor(category),
+                            userConfirmed = rs.getBoolean("viewer_confirmed"),
+                            createdAtEpochMs = createdAt
                         )
                     )
                 }
@@ -151,17 +158,6 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
         val id = "inc-${UUID.randomUUID().toString().take(8)}"
         val now = System.currentTimeMillis()
         val (lat, lon) = getCoordsForNeighborhood(req.neighborhood)
-
-        val aiRec = when (req.category) {
-            "ROUBO_FURTO" -> "Mantenha pertences protegidos e evite aglomerações desnecessárias."
-            "INCENDIO" -> "Distancie-se da fumaça e desimpeça a via para os veículos de emergência."
-            "ALAGAMENTO" -> "Não tente atravessar enxurradas a pé ou com veículos leves."
-            "TEMPESTADE" -> "Procure abrigo seguro longe de árvores e estruturas metálicas."
-            else -> "Atenção redobrada ao transitar por esta região."
-        }
-
-        // O relato não é encaminhado a nenhum órgão público; o texto precisa dizer isso.
-        val authority = "Não é enviado à polícia. Em perigo, ligue 190."
 
         val newIncident = IncidentDto(
             id = id,
@@ -178,13 +174,13 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
             commentsCount = 0,
             sharesCount = 0,
             status = "REPORTADO",
-            authorityAssigned = authority,
+            authorityAssigned = AUTHORITY_NOTICE,
             isAnonymous = req.isAnonymous,
             mapXFraction = 0.50f,
             mapYFraction = 0.50f,
             latitude = req.latitude ?: lat,
             longitude = req.longitude ?: lon,
-            aiSafetyRecommendation = aiRec,
+            aiSafetyRecommendation = safetyTipFor(req.category),
             userConfirmed = false,
             createdAtEpochMs = now
         )
@@ -192,38 +188,24 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
         DatabaseFactory.getConnection().use { conn ->
             val sql = """
                 INSERT INTO incidents (
-                    id, category, custom_badge_title, title, description, address, neighborhood,
-                    distance_meters, time_ago, verified, confirmations, comments_count, shares_count,
-                    status, authority_assigned, is_anonymous, map_x_fraction, map_y_fraction,
-                    latitude, longitude, ai_safety_recommendation, user_confirmed, created_at, reporter_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    id, reporter_id, category, custom_badge_title, title, description, address, neighborhood,
+                    latitude, longitude, is_anonymous, status, verified, created_at
+                ) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?)
             """.trimIndent()
 
             conn.prepareStatement(sql).use { stmt ->
                 stmt.setString(1, newIncident.id)
-                stmt.setString(2, newIncident.category)
-                if (newIncident.customBadgeTitle != null) stmt.setString(3, newIncident.customBadgeTitle) else stmt.setNull(3, java.sql.Types.VARCHAR)
+                stmt.setString(2, reporterId)
+                stmt.setString(3, newIncident.category)
                 stmt.setString(4, newIncident.title)
                 stmt.setString(5, newIncident.description)
                 stmt.setString(6, newIncident.address)
                 stmt.setString(7, newIncident.neighborhood)
-                stmt.setInt(8, newIncident.distanceMeters)
-                stmt.setString(9, newIncident.timeAgo)
-                stmt.setInt(10, if (newIncident.verified) 1 else 0)
-                stmt.setInt(11, newIncident.confirmations)
-                stmt.setInt(12, newIncident.commentsCount)
-                stmt.setInt(13, newIncident.sharesCount)
-                stmt.setString(14, newIncident.status)
-                stmt.setString(15, newIncident.authorityAssigned)
-                stmt.setInt(16, if (newIncident.isAnonymous) 1 else 0)
-                stmt.setFloat(17, newIncident.mapXFraction)
-                stmt.setFloat(18, newIncident.mapYFraction)
-                stmt.setDouble(19, newIncident.latitude)
-                stmt.setDouble(20, newIncident.longitude)
-                stmt.setString(21, newIncident.aiSafetyRecommendation)
-                stmt.setInt(22, 0)
-                stmt.setLong(23, now)
-                stmt.setString(24, reporterId)
+                stmt.setDouble(8, newIncident.latitude)
+                stmt.setDouble(9, newIncident.longitude)
+                stmt.setBoolean(10, newIncident.isAnonymous)
+                stmt.setString(11, newIncident.status)
+                stmt.setTimestamp(12, Timestamp(now))
                 stmt.executeUpdate()
             }
         }
@@ -234,7 +216,7 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
     /** "Eu também vi": liga ou desliga a confirmação desta pessoa. Null se o relato não existe ou está oculto. */
     fun toggleConfirmation(userId: String, incidentId: String): ConfirmIncidentResponse? {
         DatabaseFactory.getConnection().use { conn ->
-            val visible = conn.prepareStatement("SELECT 1 FROM incidents WHERE id = ? AND hidden = 0").use { st ->
+            val visible = conn.prepareStatement("SELECT 1 FROM incidents WHERE id = ? AND NOT hidden").use { st ->
                 st.setString(1, incidentId)
                 st.executeQuery().use { it.next() }
             }
@@ -248,18 +230,13 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
                 conn.prepareStatement("INSERT INTO incident_confirmations (incident_id, user_id, created_at) VALUES (?, ?, ?)").use { st ->
                     st.setString(1, incidentId)
                     st.setString(2, userId)
-                    st.setLong(3, System.currentTimeMillis())
+                    st.setTimestamp(3, Timestamp(System.currentTimeMillis()))
                     st.executeUpdate()
                 }
             }
             val total = conn.prepareStatement("SELECT COUNT(*) FROM incident_confirmations WHERE incident_id = ?").use { st ->
                 st.setString(1, incidentId)
                 st.executeQuery().use { rs -> if (rs.next()) rs.getInt(1) else 0 }
-            }
-            conn.prepareStatement("UPDATE incidents SET confirmations = ? WHERE id = ?").use { st ->
-                st.setInt(1, total)
-                st.setString(2, incidentId)
-                st.executeUpdate()
             }
             return ConfirmIncidentResponse(incidentId = incidentId, confirmations = total, userConfirmed = !removed)
         }
@@ -277,9 +254,9 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
         }
         if (!exists) return null
         val author = if (req.isAnonymous) {
-            "Cidadão Anônimo"
+            ANONYMOUS_AUTHOR
         } else {
-            getUserProfile(userId)?.name ?: "Cidadão Colaborador"
+            getUserProfile(userId)?.name ?: FORMER_AUTHOR
         }
 
         val comment = CommentDto(
@@ -292,22 +269,17 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
         )
 
         DatabaseFactory.getConnection().use { conn ->
+            // Guarda quem escreveu (não o nome): se a pessoa mudar o nome ou apagar a conta, o comentário acompanha.
             conn.prepareStatement("""
-                INSERT INTO comments (id, incident_id, author_name, content, time_ago, is_official_authority, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO comments (id, incident_id, author_id, is_anonymous, content, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
             """.trimIndent()).use { stmt ->
                 stmt.setString(1, comment.id)
                 stmt.setString(2, comment.incidentId)
-                stmt.setString(3, comment.authorName)
-                stmt.setString(4, comment.content)
-                stmt.setString(5, comment.timeAgo)
-                stmt.setInt(6, 0)
-                stmt.setLong(7, now)
-                stmt.executeUpdate()
-            }
-
-            conn.prepareStatement("UPDATE incidents SET comments_count = comments_count + 1 WHERE id = ?").use { stmt ->
-                stmt.setString(1, incidentId)
+                stmt.setString(3, userId)
+                stmt.setBoolean(4, req.isAnonymous)
+                stmt.setString(5, comment.content)
+                stmt.setTimestamp(6, Timestamp(now))
                 stmt.executeUpdate()
             }
         }
@@ -318,18 +290,28 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
     fun getCommentsForIncident(incidentId: String): List<CommentDto> {
         val list = mutableListOf<CommentDto>()
         DatabaseFactory.getConnection().use { conn ->
-            conn.prepareStatement("SELECT * FROM comments WHERE incident_id = ? ORDER BY created_at ASC").use { stmt ->
+            conn.prepareStatement(
+                """
+                SELECT c.id, c.incident_id, c.content, c.is_anonymous, c.created_at, u.name AS author_name
+                FROM comments c LEFT JOIN users u ON u.id = c.author_id
+                WHERE c.incident_id = ? ORDER BY c.created_at ASC
+                """.trimIndent()
+            ).use { stmt ->
                 stmt.setString(1, incidentId)
                 val rs = stmt.executeQuery()
                 while (rs.next()) {
+                    val author = when {
+                        rs.getBoolean("is_anonymous") -> ANONYMOUS_AUTHOR
+                        else -> rs.getString("author_name") ?: FORMER_AUTHOR
+                    }
                     list.add(
                         CommentDto(
                             id = rs.getString("id"),
                             incidentId = rs.getString("incident_id"),
-                            authorName = rs.getString("author_name"),
+                            authorName = author,
                             content = rs.getString("content"),
-                            timeAgo = timeAgoLabel(rs.getLong("created_at")),
-                            isOfficialAuthority = rs.getInt("is_official_authority") == 1
+                            timeAgo = timeAgoLabel(rs.getTimestamp("created_at").time),
+                            isOfficialAuthority = false
                         )
                     )
                 }
@@ -447,66 +429,13 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
     }
 
     // --- REELS ---
+    // A tabela antiga de reels (curtida global, conteúdo fixo) saiu no Postgres. O feed de vídeos do app
+    // vem dos anexos dos relatos; estas rotas ficam só para versões antigas do app não quebrarem.
 
-    fun getReels(): List<SafetyReelDto> {
-        val list = mutableListOf<SafetyReelDto>()
-        DatabaseFactory.getConnection().use { conn ->
-            conn.prepareStatement("SELECT * FROM reels ORDER BY likes_count DESC").use { stmt ->
-                val rs = stmt.executeQuery()
-                while (rs.next()) {
-                    list.add(
-                        SafetyReelDto(
-                            id = rs.getString("id"),
-                            title = rs.getString("title"),
-                            description = rs.getString("description"),
-                            authorName = rs.getString("author_name"),
-                            authorRole = rs.getString("author_role"),
-                            isOfficialVerified = rs.getInt("is_official_verified") == 1,
-                            location = rs.getString("location"),
-                            timeAgo = rs.getString("time_ago"),
-                            viewsLabel = rs.getString("views_label"),
-                            likesCount = rs.getInt("likes_count"),
-                            commentsCount = rs.getInt("comments_count"),
-                            sharesCount = rs.getInt("shares_count"),
-                            category = rs.getString("category"),
-                            isLiked = rs.getInt("is_liked") == 1,
-                            durationSeconds = rs.getInt("duration_seconds")
-                        )
-                    )
-                }
-            }
-        }
-        return list
-    }
+    fun getReels(): List<SafetyReelDto> = emptyList()
 
-    fun toggleLikeReel(reelId: String): ToggleLikeResponse? {
-        DatabaseFactory.getConnection().use { conn ->
-            var currentLikes = 0
-            var isLiked = false
-            conn.prepareStatement("SELECT likes_count, is_liked FROM reels WHERE id = ?").use { stmt ->
-                stmt.setString(1, reelId)
-                val rs = stmt.executeQuery()
-                if (rs.next()) {
-                    currentLikes = rs.getInt("likes_count")
-                    isLiked = rs.getInt("is_liked") == 1
-                } else {
-                    return null
-                }
-            }
-
-            val newIsLiked = !isLiked
-            val newLikes = if (newIsLiked) currentLikes + 1 else (currentLikes - 1).coerceAtLeast(0)
-
-            conn.prepareStatement("UPDATE reels SET likes_count = ?, is_liked = ? WHERE id = ?").use { stmt ->
-                stmt.setInt(1, newLikes)
-                stmt.setInt(2, if (newIsLiked) 1 else 0)
-                stmt.setString(3, reelId)
-                stmt.executeUpdate()
-            }
-
-            return ToggleLikeResponse(reelId, newIsLiked, newLikes)
-        }
-    }
+    @Suppress("UNUSED_PARAMETER")
+    fun toggleLikeReel(reelId: String): ToggleLikeResponse? = null
 
     // --- SOS & GUARDIANS ---
 
@@ -519,9 +448,8 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
             conn.prepareStatement("""
                 INSERT INTO sos_alerts (
                     protocol_id, user_id, neighborhood, latitude, longitude, emergency_type,
-                    trigger_source, dispatched_unit, estimated_arrival_minutes, status,
-                    guardians_alerted_count, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    trigger_source, status, guardians_alerted_count, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """.trimIndent()).use { stmt ->
                 stmt.setString(1, protocolId)
                 stmt.setString(2, userId)
@@ -530,11 +458,9 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
                 req.longitude?.let { stmt.setDouble(5, it) } ?: stmt.setNull(5, java.sql.Types.DOUBLE)
                 stmt.setString(6, req.emergencyType)
                 stmt.setString(7, req.triggerSource)
-                stmt.setString(8, "NENHUMA")
-                stmt.setInt(9, 0)
-                stmt.setString(10, "REGISTRADO")
-                stmt.setInt(11, guardians.size)
-                stmt.setLong(12, System.currentTimeMillis())
+                stmt.setString(8, "REGISTRADO")
+                stmt.setInt(9, guardians.size)
+                stmt.setTimestamp(10, Timestamp(System.currentTimeMillis()))
                 stmt.executeUpdate()
             }
         }
@@ -550,7 +476,7 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
     fun getGuardians(userId: String): List<GuardianContactDto> {
         val list = mutableListOf<GuardianContactDto>()
         DatabaseFactory.getConnection().use { conn ->
-            conn.prepareStatement("SELECT * FROM guardians WHERE user_id = ? ORDER BY rowid").use { stmt ->
+            conn.prepareStatement("SELECT id, name, relation, phone FROM guardians WHERE user_id = ? ORDER BY created_at, id").use { stmt ->
                 stmt.setString(1, userId)
                 val rs = stmt.executeQuery()
                 while (rs.next()) {
@@ -581,15 +507,15 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
         )
         DatabaseFactory.getConnection().use { conn ->
             conn.prepareStatement("""
-                INSERT INTO guardians (id, user_id, name, relation, phone, is_sharing_live_location, distance_label)
-                VALUES (?, ?, ?, ?, ?, 0, ?)
+                INSERT INTO guardians (id, user_id, name, relation, phone, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
             """.trimIndent()).use { stmt ->
                 stmt.setString(1, dto.id)
                 stmt.setString(2, userId)
                 stmt.setString(3, dto.name)
                 stmt.setString(4, dto.relation)
                 stmt.setString(5, dto.phone)
-                stmt.setString(6, dto.distanceLabel)
+                stmt.setTimestamp(6, Timestamp(System.currentTimeMillis()))
                 stmt.executeUpdate()
             }
         }
@@ -608,6 +534,19 @@ class ServerRepository(private val mediaRepository: MediaRepository = MediaRepos
 
     private companion object {
         const val GUARDIAN_LABEL = "Recebe seu aviso de SOS pelo WhatsApp"
+        const val ANONYMOUS_AUTHOR = "Cidadão Anônimo"
+        /** Comentário de quem apagou a conta (ou importado do SQLite sem autor). */
+        const val FORMER_AUTHOR = "Cidadão Colaborador"
+        /** O relato não é encaminhado a nenhum órgão público; o texto precisa dizer isso. */
+        const val AUTHORITY_NOTICE = "Não é enviado à polícia. Em perigo, ligue 190."
+
+        fun safetyTipFor(category: String): String = when (category) {
+            "ROUBO_FURTO" -> "Mantenha pertences protegidos e evite aglomerações desnecessárias."
+            "INCENDIO" -> "Distancie-se da fumaça e desimpeça a via para os veículos de emergência."
+            "ALAGAMENTO" -> "Não tente atravessar enxurradas a pé ou com veículos leves."
+            "TEMPESTADE" -> "Procure abrigo seguro longe de árvores e estruturas metálicas."
+            else -> "Atenção redobrada ao transitar por esta região."
+        }
     }
 
     // --- INTEGRATIONS CATALOG ---

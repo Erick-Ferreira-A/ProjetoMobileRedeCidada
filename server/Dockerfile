@@ -27,11 +27,11 @@ COPY --from=build /src/server/build/install/server /app
 # Memória enxuta: o Railway cobra por uso, e isto mantém o servidor perto de 250 MB.
 ENV JAVA_OPTS="-Xmx192m -Xss512k -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Dfile.encoding=UTF-8"
 
-# Banco e anexos ficam em /data: monte um volume persistente nesse caminho.
+# O banco é Postgres (variável DATABASE_URL, definida no Railway).
+# Fotos e vídeos ficam em /data/uploads: monte um volume persistente em /data.
 ENV APP_ENV=production \
     TRUST_PROXY=true \
     SEED_DEMO_DATA=false \
-    DATABASE_PATH=/data/rede_cidada.db \
     MEDIA_DIR=/data/uploads
 
 EXPOSE 8080

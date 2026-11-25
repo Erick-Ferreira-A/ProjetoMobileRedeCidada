@@ -18,7 +18,7 @@ import java.util.Base64
  * - `CORS_ALLOWED_HOSTS`: hosts separados por vírgula (ex.: `localhost:3000,painel.exemplo.com`).
  *   Vazio = CORS desligado (o app Android não precisa de CORS).
  * - `SEED_DEMO_DATA` (padrão `true` fora de produção): cria usuário e dados de demonstração.
- * - `DATABASE_PATH`: arquivo SQLite (padrão `rede_cidada_server.db`).
+ * - `DATABASE_URL`: banco Postgres (obrigatória). `DB_POOL_SIZE` e `MIGRATE_FROM_SQLITE` são opcionais.
  * - `MEDIA_DIR`: pasta das fotos/vídeos dos relatos (padrão `uploads`).
  * - `SPTRANS_TOKEN`: token da API Olho Vivo (ônibus municipais). Sem ele, as rotas de ônibus respondem 503.
  * - `ARTESP_API_KEY`: chave da API Trilhos (status das linhas concedidas). Sem ela, a rota de trilhos responde 503.
@@ -55,7 +55,21 @@ object AppConfig {
 
     val seedDemoData: Boolean = env("SEED_DEMO_DATA")?.toBooleanStrictOrNull() ?: !isProduction
 
-    val databasePath: String = env("DATABASE_PATH") ?: "rede_cidada_server.db"
+    /**
+     * Banco Postgres. Aceita o formato do Railway (postgresql://usuario:senha@host:porta/banco)
+     * ou uma URL JDBC (jdbc:postgresql://...). Sem ela o servidor não sobe; em desenvolvimento,
+     * use a tarefa :server:runLocal, que liga um Postgres embutido.
+     */
+    val databaseUrl: String? = env("DATABASE_URL")
+
+    /** Conexões abertas ao mesmo tempo com o Postgres (o plano Hobby do Railway aguenta poucas). */
+    val databasePoolSize: Int = env("DB_POOL_SIZE")?.toIntOrNull()?.coerceIn(1, 20) ?: 5
+
+    /**
+     * Caminho do banco SQLite antigo. Se o Postgres estiver vazio na inicialização, os dados são
+     * copiados de lá uma única vez (o arquivo não é alterado). Usado só na troca de produção.
+     */
+    val migrateFromSqlitePath: String? = env("MIGRATE_FROM_SQLITE")
 
     val mediaDirectory: String = env("MEDIA_DIR") ?: "uploads"
 

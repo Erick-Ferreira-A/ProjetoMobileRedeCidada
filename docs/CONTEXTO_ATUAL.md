@@ -3,7 +3,8 @@
 Atualizado em 25/11/2026. O código prevalece sobre este resumo.
 
 ## Onde está o trabalho
-- Repositório: `Erick-Ferreira-A/ProjetoMobileRedeCidada`. Servidor e back-end são do **Fred** (Ktor + SQLite no Railway).
+- Repositório: `Erick-Ferreira-A/ProjetoMobileRedeCidada`. Servidor e back-end são do **Fred** (Ktor no Railway; produção ainda em SQLite).
+- **Postgres:** branch `agent/claude-postgres` (PR aberto, não mesclar antes de criar o Postgres no Railway). Troca em produção passo a passo em `server/MIGRACAO_POSTGRES.md`. Servidor local: `.\gradlew.bat :server:runLocal` (Postgres embutido).
 - Redesign das telas: branch `agent/claude-design-system`, **PR #7** aberto para a `main`, aguardando revisão do Fred (PR #6 fechado, conteúdo incluído no #7).
 - Pasta do projeto (desde 24/11/2026): `C:\Users\Erick Rondonia\Documents\REDE CIDADA\`. Repo em `01_app\ProjetoMobileRedeCidada` (abrir este caminho no Android Studio). Índice em `00_LEIA-ME.md`; decisões, changelog, aprendizados, pendências e rotina de sessão em `08_conhecimento\`.
 - APKs de teste (não vão para o git): `C:\Users\Erick Rondonia\Documents\REDE CIDADA\03_apks\` — último: `RedeCidada-teste-2026-11-25-v9.apk` (mapa no estilo do app e vídeos tocando; versão para a avaliação heurística), apontando para o servidor do Railway.
@@ -48,8 +49,9 @@ Atualizado em 25/11/2026. O código prevalece sobre este resumo.
 1. Fred revisar e mesclar o PR #7.
 2. Resolver o cadastro (pegar a mensagem de erro do celular).
 3. Redesenhar Relatar (3 passos), Detalhe do alerta e Mobilidade conforme `TELAS.md`.
-4. Com o Fred: Postgres + R2 + push, depois comentários, menções, avaliação de notícia e score real.
+4. Trocar a produção para Postgres (`server/MIGRACAO_POSTGRES.md`); depois R2 + backup + push, comentários, menções, avaliação de notícia e score real.
 
 ## Testes e regras
+- Servidor no branch do Postgres: 36 testes (Postgres embutido, sem Docker) em 25/11/2026.
 - `.\gradlew.bat assembleDebug test lint`: app 17 testes, servidor 33, lint 0 erros (25/11/2026). Repetido no caminho novo em 24/11/2026 22:54: tudo passou, lint 0 erros / 51 warnings / 2 hints (linha de base de warnings).
 - Nunca tocar em SOS/190 nem publicar relato real em teste; no emulador, conferir o foco do app antes de cada toque (skill de validação).

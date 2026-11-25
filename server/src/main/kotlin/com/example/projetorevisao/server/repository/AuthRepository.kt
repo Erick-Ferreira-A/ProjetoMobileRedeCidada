@@ -9,6 +9,7 @@ import com.example.projetorevisao.server.security.Validators
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.SQLException
+import java.sql.Timestamp
 import java.util.UUID
 
 sealed interface RegisterResult {
@@ -40,8 +41,8 @@ class AuthRepository {
             try {
                 conn.prepareStatement(
                     """
-                    INSERT INTO users (id, name, email, cpf_masked, password_hash, neighborhood, trust_score, anonymous_default, geofence_radius, created_at, terms_accepted_at)
-                    VALUES (?, ?, ?, '', ?, ?, 0, 1, 2.0, ?, ?)
+                    INSERT INTO users (id, name, email, password_hash, neighborhood, trust_score, anonymous_default, geofence_radius, created_at, terms_accepted_at)
+                    VALUES (?, ?, ?, ?, ?, 0, TRUE, 2.0, ?, ?)
                     """.trimIndent()
                 ).use { stmt ->
                     stmt.setString(1, userId)
@@ -49,13 +50,13 @@ class AuthRepository {
                     stmt.setString(3, email)
                     stmt.setString(4, passwordHash)
                     stmt.setString(5, req.neighborhood.trim())
-                    stmt.setLong(6, now)
-                    stmt.setLong(7, now)
+                    stmt.setTimestamp(6, Timestamp(now))
+                    stmt.setTimestamp(7, Timestamp(now))
                     stmt.executeUpdate()
                 }
             } catch (ex: SQLException) {
-                // Corrida entre dois cadastros com o mesmo e-mail: a restrição UNIQUE decide.
-                if (ex.message?.contains("UNIQUE", ignoreCase = true) == true) return RegisterResult.EmailTaken
+                // Corrida entre dois cadastros com o mesmo e-mail: o índice único decide (23505 = unique_violation).
+                if (ex.sqlState == "23505") return RegisterResult.EmailTaken
                 throw ex
             }
             val user = UserRow(userId, req.name.trim(), email, req.neighborhood.trim(), 0, passwordHash)
@@ -103,8 +104,8 @@ class AuthRepository {
                 if (rs.next()) {
                     tokenId = rs.getString("id")
                     userId = rs.getString("user_id")
-                    revoked = rs.getInt("revoked") == 1
-                    expiresAt = rs.getLong("expires_at")
+                    revoked = rs.getBoolean("revoked")
+                    expiresAt = rs.getTimestamp("expires_at").time
                 }
             }
             val id = tokenId ?: return null
@@ -118,7 +119,7 @@ class AuthRepository {
             if (expiresAt < System.currentTimeMillis()) return null
 
             // Marca como usado de forma atômica: só uma requisição concorrente vence.
-            val claimed = conn.prepareStatement("UPDATE refresh_tokens SET revoked = 1 WHERE id = ? AND revoked = 0").use { stmt ->
+            val claimed = conn.prepareStatement("UPDATE refresh_tokens SET revoked = TRUE WHERE id = ? AND NOT revoked").use { stmt ->
                 stmt.setString(1, id)
                 stmt.executeUpdate()
             }
@@ -132,7 +133,7 @@ class AuthRepository {
     /** Encerra a sessão ligada a este refresh token. Idempotente. */
     fun logout(refreshToken: String) {
         DatabaseFactory.getConnection().use { conn ->
-            conn.prepareStatement("UPDATE refresh_tokens SET revoked = 1 WHERE token_hash = ?").use { stmt ->
+            conn.prepareStatement("UPDATE refresh_tokens SET revoked = TRUE WHERE token_hash = ?").use { stmt ->
                 stmt.setString(1, JwtConfig.hashRefreshToken(refreshToken))
                 stmt.executeUpdate()
             }
@@ -140,52 +141,23 @@ class AuthRepository {
     }
 
     /**
-     * Exclui a conta e os dados ligados a ela (sessões, guardiões, alertas SOS).
-     * Exige a senha atual. Devolve false se a senha estiver errada.
+     * Exclui a conta. Exige a senha atual; devolve false se a senha estiver errada.
+     * As FKs do banco fazem o resto: CASCADE apaga sessões, guardiões, alertas SOS, confirmações,
+     * denúncias e bloqueios; SET NULL deixa relatos, anexos e comentários públicos sem ligação com a pessoa.
      */
     fun deleteAccount(userId: String, password: String): Boolean {
         DatabaseFactory.getConnection().use { conn ->
             val user = findUserById(conn, userId) ?: return false
             if (!PasswordHasher.verify(password, user.passwordHash)) return false
-            conn.autoCommit = false
-            try {
-                for (sql in listOf(
-                    "DELETE FROM refresh_tokens WHERE user_id = ?",
-                    "DELETE FROM guardians WHERE user_id = ?",
-                    "DELETE FROM sos_alerts WHERE user_id = ?",
-                    "DELETE FROM incident_confirmations WHERE user_id = ?",
-                    "DELETE FROM incident_reports WHERE reporter_user_id = ?",
-                    "DELETE FROM user_blocks WHERE blocker_id = ?",
-                    "DELETE FROM user_blocks WHERE blocked_id = ?",
-                    "UPDATE incidents SET reporter_id = NULL WHERE reporter_id = ?",
-                    "UPDATE incident_media SET uploader_id = NULL WHERE uploader_id = ?",
-                    "DELETE FROM users WHERE id = ?"
-                )) {
-                    conn.prepareStatement(sql).use { stmt ->
-                        stmt.setString(1, userId)
-                        stmt.executeUpdate()
-                    }
-                }
-                // As confirmações dessa pessoa saíram: recalcula os contadores.
-                conn.createStatement().use {
-                    it.executeUpdate(
-                        "UPDATE incidents SET confirmations = " +
-                            "(SELECT COUNT(*) FROM incident_confirmations c WHERE c.incident_id = incidents.id)"
-                    )
-                }
-                conn.commit()
-            } catch (ex: Exception) {
-                conn.rollback()
-                throw ex
-            } finally {
-                conn.autoCommit = true
+            conn.prepareStatement("DELETE FROM users WHERE id = ?").use { stmt ->
+                stmt.setString(1, userId)
+                stmt.executeUpdate()
             }
             log.info("Conta {} excluída a pedido do usuário.", userId)
             return true
         }
     }
 
-    /** Encerra todas as sessões do usuário (ex.: "sair de todos os aparelhos"). */
     /** Exclusão pela página web: identifica a conta pelo e-mail e exige a senha. */
     fun deleteAccountByEmail(rawEmail: String, password: String): Boolean {
         val email = Validators.normalizeEmail(rawEmail)
@@ -193,12 +165,13 @@ class AuthRepository {
         return deleteAccount(userId, password)
     }
 
+    /** Encerra todas as sessões do usuário (ex.: "sair de todos os aparelhos"). */
     fun logoutAll(userId: String) {
         DatabaseFactory.getConnection().use { conn -> revokeAll(conn, userId) }
     }
 
     private fun revokeAll(conn: Connection, userId: String) {
-        conn.prepareStatement("UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?").use { stmt ->
+        conn.prepareStatement("UPDATE refresh_tokens SET revoked = TRUE WHERE user_id = ?").use { stmt ->
             stmt.setString(1, userId)
             stmt.executeUpdate()
         }
@@ -208,19 +181,19 @@ class AuthRepository {
         val refreshToken = JwtConfig.generateRefreshToken()
         val now = System.currentTimeMillis()
         conn.prepareStatement(
-            "INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, revoked, created_at) VALUES (?, ?, ?, ?, 0, ?)"
+            "INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at, revoked, created_at) VALUES (?, ?, ?, ?, FALSE, ?)"
         ).use { stmt ->
             stmt.setString(1, UUID.randomUUID().toString())
             stmt.setString(2, user.id)
             stmt.setString(3, JwtConfig.hashRefreshToken(refreshToken))
-            stmt.setLong(4, now + JwtConfig.refreshTokenTtlMillis)
-            stmt.setLong(5, now)
+            stmt.setTimestamp(4, Timestamp(now + JwtConfig.refreshTokenTtlMillis))
+            stmt.setTimestamp(5, Timestamp(now))
             stmt.executeUpdate()
         }
         // Limpeza oportunista de tokens vencidos deste usuário.
         conn.prepareStatement("DELETE FROM refresh_tokens WHERE user_id = ? AND expires_at < ?").use { stmt ->
             stmt.setString(1, user.id)
-            stmt.setLong(2, now)
+            stmt.setTimestamp(2, Timestamp(now))
             stmt.executeUpdate()
         }
         return AuthResponse(

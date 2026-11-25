@@ -16,6 +16,10 @@ ksp = "2.2.10-2.0.2"
 ktor = "3.6.0"
 playServicesLocation = "21.3.0"
 sqliteJdbc = "3.45.1.0"
+postgresql = "42.7.4"
+hikaricp = "6.2.1"
+flyway = "11.1.0"
+embeddedPostgres = "2.1.0"
 logback = "1.5.16"
 kotlinxSerialization = "1.8.0"
 bcrypt = "0.10.2"
@@ -63,6 +67,11 @@ ktorClientCio = { group = "io.ktor", name = "ktor-client-cio-jvm", version.ref =
 ktorClientMock = { group = "io.ktor", name = "ktor-client-mock-jvm", version.ref = "ktor" }
 ktorServerTestHost = { group = "io.ktor", name = "ktor-server-test-host-jvm", version.ref = "ktor" }
 sqliteJdbc = { group = "org.xerial", name = "sqlite-jdbc", version.ref = "sqliteJdbc" }
+postgresql = { group = "org.postgresql", name = "postgresql", version.ref = "postgresql" }
+hikaricp = { group = "com.zaxxer", name = "HikariCP", version.ref = "hikaricp" }
+flywayCore = { group = "org.flywaydb", name = "flyway-core", version.ref = "flyway" }
+flywayPostgresql = { group = "org.flywaydb", name = "flyway-database-postgresql", version.ref = "flyway" }
+embeddedPostgres = { group = "io.zonky.test", name = "embedded-postgres", version.ref = "embeddedPostgres" }
 logbackClassic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
 kotlinxSerializationJson = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 
