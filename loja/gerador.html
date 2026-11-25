@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Gerador de imagens da loja</title>
+<style>
+  @font-face { font-family: "Bricolage"; src: url("../app/src/main/res/font/bricolage_grotesque.ttf"); }
+  @font-face { font-family: "Atkinson"; src: url("../app/src/main/res/font/atkinson_hyperlegible_next.ttf"); }
+  body { background: #ddd; font-family: sans-serif; }
+  canvas { display: block; margin: 12px; box-shadow: 0 0 0 1px #999; }
+</style>
+</head>
+<body>
+<!-- Gera o ícone (512×512) e a imagem de destaque (1024×500) da Play Store a partir do ícone do app
+     (res/drawable/ic_launcher_foreground.xml) e das fontes do app. Abra no navegador e chame exportar(). -->
+<canvas id="icone" width="512" height="512"></canvas>
+<canvas id="destaque" width="1024" height="500"></canvas>
+<script>
+const AZUL = "#213885", PAPEL = "#F9FAFA", LARANJA = "#F1581D", MARCA = "#1D3B8B"; // ícone igual ao do app; fundo do destaque no azul da marca (guia visual)
+
+// O mesmo desenho do ícone do app (viewport 108×108).
+function escudo(ctx) {
+  ctx.fillStyle = AZUL;
+  ctx.fill(new Path2D("M54,20 L81,30 L81,47 C81,65 69,79 54,87 C39,79 27,65 27,47 L27,30 Z"));
+  ctx.fillStyle = PAPEL;
+  ctx.fill(new Path2D("M54,26 L75,34 L75,47 C75,60 66,71 54,78 C42,71 33,60 33,47 L33,34 Z"));
+  ctx.strokeStyle = LARANJA; ctx.lineWidth = 4.8; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.stroke(new Path2D("M54,39 L40,60 L68,60 Z"));
+  ctx.fillStyle = LARANJA;
+  for (const [x, y, r] of [[54, 38, 5], [40, 61, 5], [68, 61, 5], [54, 53, 3.7]]) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function desenharIcone() {
+  const c = document.getElementById("icone"), ctx = c.getContext("2d");
+  ctx.fillStyle = PAPEL; ctx.fillRect(0, 0, 512, 512);      // quadrado cheio: a Play Store arredonda sozinha
+  ctx.save(); ctx.scale(512 / 108, 512 / 108); escudo(ctx); ctx.restore();
+}
+
+function textoQuebrado(ctx, texto, x, y, largura, altura) {
+  const palavras = texto.split(" "); let linha = "";
+  for (const p of palavras) {
+    const teste = linha ? linha + " " + p : p;
+    if (ctx.measureText(teste).width > largura && linha) { ctx.fillText(linha, x, y); y += altura; linha = p; }
+    else linha = teste;
+  }
+  ctx.fillText(linha, x, y);
+  return y;
+}
+
+function desenharDestaque() {
+  const c = document.getElementById("destaque"), ctx = c.getContext("2d");
+  ctx.fillStyle = MARCA; ctx.fillRect(0, 0, 1024, 500);
+  // Selo claro com o escudo, à esquerda
+  ctx.fillStyle = PAPEL;
+  ctx.beginPath(); ctx.roundRect(72, 90, 320, 320, 72); ctx.fill();
+  ctx.save(); ctx.translate(72, 90); ctx.scale(320 / 108, 320 / 108); escudo(ctx); ctx.restore();
+  // Texto à direita
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "bold 76px Bricolage"; ctx.textBaseline = "alphabetic";
+  ctx.fillText("Rede Cidadã", 448, 200);
+  ctx.fillStyle = "#DCE3F5"; ctx.font = "32px Atkinson";
+  const fim = textoQuebrado(ctx, "Alertas do seu bairro, SOS para quem você confia e o status dos trens em São Paulo.", 450, 262, 520, 44);
+  // Faixa laranja discreta
+  ctx.fillStyle = LARANJA; ctx.beginPath(); ctx.roundRect(450, fim + 36, 120, 10, 5); ctx.fill();
+}
+
+async function preparar() {
+  await document.fonts.load("bold 76px Bricolage");
+  await document.fonts.load("32px Atkinson");
+  desenharIcone(); desenharDestaque();
+  return "pronto";
+}
+window.pronto = preparar();
+function exportar(id, tipo = "image/png", qualidade) {
+  return document.getElementById(id).toDataURL(tipo, qualidade);
+}
+</script>
+</body>
+</html>

@@ -4,7 +4,8 @@ Atualizado em 25/11/2026. O código prevalece sobre este resumo.
 
 ## Onde está o trabalho
 - Repositório: `Erick-Ferreira-A/ProjetoMobileRedeCidada`. Servidor e back-end são do **Fred** (Ktor no Railway; produção ainda em SQLite).
-- **Postgres:** branch `agent/claude-postgres` (PR aberto, não mesclar antes de criar o Postgres no Railway). Troca em produção passo a passo em `server/MIGRACAO_POSTGRES.md`. Servidor local: `.\gradlew.bat :server:runLocal` (Postgres embutido).
+- **Postgres em produção desde 25/11/2026** (PR #8): Flyway, FKs, dados do SQLite copiados. Servidor local: `.\gradlew.bat :server:runLocal` (Postgres embutido). Guia da troca: `server/MIGRACAO_POSTGRES.md`.
+- **Play Store:** pendências em `CHECKLIST_PLAY_STORE.md` (dependem de Marnes, Fred e Erick). Versão de loja 1.0.1 (`versionCode 2`), imagens em `loja/`. O Claude não altera telas: os ajustes sugeridos para o Erick estão no bloco 2 do checklist.
 - Redesign das telas: branch `agent/claude-design-system`, **PR #7** aberto para a `main`, aguardando revisão do Fred (PR #6 fechado, conteúdo incluído no #7).
 - Pasta do projeto (desde 24/11/2026): `C:\Users\Erick Rondonia\Documents\REDE CIDADA\`. Repo em `01_app\ProjetoMobileRedeCidada` (abrir este caminho no Android Studio). Índice em `00_LEIA-ME.md`; decisões, changelog, aprendizados, pendências e rotina de sessão em `08_conhecimento\`.
 - APKs de teste (não vão para o git): `C:\Users\Erick Rondonia\Documents\REDE CIDADA\03_apks\` — último: `RedeCidada-teste-2026-11-25-v9.apk` (mapa no estilo do app e vídeos tocando; versão para a avaliação heurística), apontando para o servidor do Railway.
