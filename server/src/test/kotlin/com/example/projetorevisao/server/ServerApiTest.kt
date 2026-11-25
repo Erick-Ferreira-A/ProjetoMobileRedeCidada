@@ -349,6 +349,10 @@ class ServerApiTest {
         val served = client.get(mediaUrl)
         assertEquals(HttpStatusCode.OK, served.status)
         assertArrayEquals(jpeg, served.readRawBytes())
+        // Download em partes (Range): o player do celular precisa disso para vídeos com o índice no fim.
+        val partial = client.get(mediaUrl) { header(HttpHeaders.Range, "bytes=0-3") }
+        assertEquals(HttpStatusCode.PartialContent, partial.status)
+        assertArrayEquals(jpeg.copyOfRange(0, 4), partial.readRawBytes())
         assertTrue(client.get("/api/v1/incidents").bodyAsText().contains(mediaUrl))
 
         assertEquals(HttpStatusCode.Forbidden, client.uploadMedia(incidentId, other, jpeg, "image/jpeg").status)

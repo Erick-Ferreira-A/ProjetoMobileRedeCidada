@@ -389,6 +389,31 @@ private fun RailAction(
 private fun ReelVideo(url: String, playing: Boolean, muted: Boolean) {
     var player by remember(url) { mutableStateOf<MediaPlayer?>(null) }
     var loading by remember(url) { mutableStateOf(true) }
+    var failed by remember(url) { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // Baixa para o cache e toca o arquivo local (o servidor ainda não aceita Range; ver VideoCache).
+    val localFile by androidx.compose.runtime.produceState<java.io.File?>(null, url) {
+        value = com.example.projetorevisao.data.media.VideoCache.get(context, url)
+        if (value == null) failed = true
+    }
+    if (failed) {
+        Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+            Text(
+                "Não foi possível carregar este vídeo. Verifique a internet e tente de novo.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = OnMedia,
+                textAlign = TextAlign.Center
+            )
+        }
+        return
+    }
+    val file = localFile
+    if (file == null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = OnMedia, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
+        }
+        return
+    }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
@@ -399,7 +424,9 @@ private fun ReelVideo(url: String, playing: Boolean, muted: Boolean) {
                         player = mp
                         loading = false
                     }
-                    setVideoURI(Uri.parse(url))
+                    // Sem o diálogo do sistema: mostra a mensagem do app.
+                    setOnErrorListener { _, _, _ -> failed = true; true }
+                    setVideoPath(file.absolutePath)
                 }
             },
             update = { view ->

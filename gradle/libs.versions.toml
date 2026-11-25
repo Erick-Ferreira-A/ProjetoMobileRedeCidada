@@ -57,6 +57,7 @@ ktorServerAuth = { group = "io.ktor", name = "ktor-server-auth-jvm", version.ref
 ktorServerAuthJwt = { group = "io.ktor", name = "ktor-server-auth-jwt-jvm", version.ref = "ktor" }
 ktorServerRateLimit = { group = "io.ktor", name = "ktor-server-rate-limit-jvm", version.ref = "ktor" }
 ktorServerForwardedHeader = { group = "io.ktor", name = "ktor-server-forwarded-header-jvm", version.ref = "ktor" }
+ktorServerPartialContent = { group = "io.ktor", name = "ktor-server-partial-content-jvm", version.ref = "ktor" }
 bcrypt = { group = "at.favre.lib", name = "bcrypt", version.ref = "bcrypt" }
 ktorClientCio = { group = "io.ktor", name = "ktor-client-cio-jvm", version.ref = "ktor" }
 ktorClientMock = { group = "io.ktor", name = "ktor-client-mock-jvm", version.ref = "ktor" }
