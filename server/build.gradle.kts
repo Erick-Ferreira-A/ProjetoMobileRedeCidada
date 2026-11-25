@@ -24,6 +24,7 @@ dependencies {
     implementation(libs.ktorServerAuthJwt)
     implementation(libs.ktorServerRateLimit)
     implementation(libs.ktorServerForwardedHeader)
+    implementation(libs.ktorServerPartialContent)
     implementation(libs.bcrypt)
     implementation(libs.ktorClientCio)
     implementation(libs.sqliteJdbc)

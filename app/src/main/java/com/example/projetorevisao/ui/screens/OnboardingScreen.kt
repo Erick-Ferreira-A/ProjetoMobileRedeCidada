@@ -1,6 +1,17 @@
 package com.example.projetorevisao.ui.screens
 
 import android.content.res.Configuration
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import com.example.projetorevisao.ui.theme.BrandNavyDark
+import com.example.projetorevisao.ui.theme.BrandBlueHero
+import com.example.projetorevisao.ui.theme.BrandBlue
+import com.example.projetorevisao.ui.components.CitizenIcons
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,282 +22,329 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.projetorevisao.ui.components.CitizenIcons
 import com.example.projetorevisao.ui.components.RedeCidadaLogo
-import com.example.projetorevisao.ui.theme.BrandBlue
-import com.example.projetorevisao.ui.theme.BrandBlueHero
-import com.example.projetorevisao.ui.theme.BrandNavyDark
-import com.example.projetorevisao.ui.theme.BrandOrange
+import com.example.projetorevisao.ui.designsystem.RcAccentButton
+import com.example.projetorevisao.ui.designsystem.RcSource
+import com.example.projetorevisao.ui.designsystem.RcSourceBadge
+import com.example.projetorevisao.ui.designsystem.RcSosHoldButton
+import com.example.projetorevisao.ui.designsystem.RcTextButton
 import com.example.projetorevisao.ui.theme.CitizenSPTheme
-import com.example.projetorevisao.ui.theme.CitizenStatusColors
+import com.example.projetorevisao.ui.theme.RcSpacing
+import com.example.projetorevisao.ui.theme.RcTheme
+import com.example.projetorevisao.ui.theme.RcTone
+import kotlinx.coroutines.launch
 
+/** Um passo do onboarding: a frase (resposta), o apoio e um pedaço real do app no lugar de ilustração. */
+private data class OnboardingPage(
+    val headline: String,
+    val body: String,
+    val preview: @Composable () -> Unit
+)
+
+/**
+ * Onboarding (docs/design/TELAS.md §2.9) — 3 passos e depois a permissão de localização.
+ *
+ * Guia visual v1.0: fundo neutro do tema (sem degradê), títulos em Bricolage, laranja só no
+ * botão de destaque com texto marinho, "Pular" sempre visível e o atalho de emergência no topo,
+ * longe do botão principal (achado de 23/11/2026).
+ */
 @Composable
 fun CitizenOnboardingScreen(
     onFinishOnboarding: () -> Unit
 ) {
-    var step by rememberSaveable { mutableIntStateOf(0) }
-
-    if (step == 0) {
-        OnboardingWelcomeStep(
-            onNext = { step = 1 }
-        )
+    // 0..2 = apresentação; 3 = localização.
+    var stage by rememberSaveable { mutableIntStateOf(0) }
+    if (stage < 3) {
+        OnboardingPager(onDone = { stage = 3 })
     } else {
-        LocationPermissionGate(
-            onGranted = onFinishOnboarding,
-            onBack = { step = 0 }
+        // O onboarding desenha por trás da barra de status (topo azul); aqui devolvemos esse espaço.
+        Box(Modifier.statusBarsPadding()) {
+            LocationPermissionGate(
+                onGranted = onFinishOnboarding,
+                onBack = { stage = 0 }
+            )
+        }
+    }
+}
+
+@Composable
+private fun OnboardingPager(onDone: () -> Unit) {
+    val pages = listOf(
+        OnboardingPage(
+            headline = "Saiba o que acontece no seu caminho.",
+            body = "Alertas, trânsito e transporte perto de você.",
+            preview = { PreviewWhatsHappening() }
+        ),
+        OnboardingPage(
+            headline = "Avise sem se expor.",
+            body = "Anônimo por padrão. Cada relato ganha um score de confiabilidade.",
+            preview = { PreviewAnonymous() }
+        ),
+        OnboardingPage(
+            headline = "Alguém de confiança, a um toque.",
+            body = "Segure o SOS para avisar seus guardiões. O app não substitui o 190.",
+            preview = { PreviewSos() }
+        )
+    )
+    val pager = rememberPagerState { pages.size }
+    val scope = rememberCoroutineScope()
+    val last = pager.currentPage == pages.lastIndex
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .navigationBarsPadding()
+    ) {
+        BrandHeader()
+
+        HorizontalPager(state = pager, modifier = Modifier.weight(1f)) { index ->
+            val page = pages[index]
+            // Rola quando a tela é baixa ou a fonte do sistema está grande.
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = RcSpacing.lg)
+            ) {
+                // Título e apoio no topo; o pedaço do app embaixo.
+                Text(
+                    page.headline,
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.semantics { heading() }
+                )
+                Spacer(Modifier.height(RcSpacing.xs))
+                Text(page.body, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(RcSpacing.lg))
+                page.preview()
+                Spacer(Modifier.height(RcSpacing.lg))
+            }
+        }
+
+        // Indicador de passo.
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = RcSpacing.md)
+                .semantics { contentDescription = "Passo ${pager.currentPage + 1} de ${pages.size}" }
+        ) {
+            pages.indices.forEach { i ->
+                val width by animateDpAsState(if (i == pager.currentPage) 24.dp else 8.dp, label = "dot")
+                Box(
+                    Modifier
+                        .size(width = width, height = 8.dp)
+                        .background(
+                            if (i == pager.currentPage) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.outlineVariant,
+                            CircleShape
+                        )
+                )
+            }
+        }
+
+        // Base: ação principal e, à direita, Pular.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(start = RcSpacing.md, end = RcSpacing.md, top = RcSpacing.md, bottom = RcSpacing.md)
+        ) {
+            RcAccentButton(
+                text = if (last) "Começar" else "Continuar",
+                onClick = {
+                    if (last) onDone() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) }
+                },
+                modifier = Modifier.weight(1f)
+            )
+            if (!last) {
+                Spacer(Modifier.width(RcSpacing.xs))
+                RcTextButton("Pular", onClick = onDone)
+            }
+        }
+    }
+}
+
+/**
+ * Topo com a identidade: degradê do azul da marca até o fundo da tela, logo no centro e o nome embaixo.
+ * Branco sobre o azul: 10,2:1 (claro) e 15,5:1 (escuro).
+ */
+@Composable
+private fun BrandHeader() {
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    // Azul mais vivo que o da marca, para o brilho; some até ficar transparente (sem faixa nem borda).
+    val glow = if (dark) Color(0xFF3D6BFF) else Color(0xFF3D63E0)
+    val glowStart = if (dark) 0.55f else 0.42f
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(top = RcSpacing.sm, bottom = RcSpacing.md),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            Modifier
+                .size(140.dp)
+                .background(
+                    Brush.radialGradient(
+                        0f to glow.copy(alpha = glowStart),
+                        0.45f to glow.copy(alpha = glowStart * 0.45f),
+                        1f to Color.Transparent
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            // A parte branca do escudo fica um pouco translúcida para se misturar ao brilho.
+            RedeCidadaLogo(size = 60.dp, innerSurfaceColor = Color.White.copy(alpha = 0.92f))
+        }
+        Text(
+            "Rede Cidadã",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(top = 0.dp)
         )
     }
 }
 
+/** Passo 1: as funções principais, uma linha cada (sem repetir o que os passos 2 e 3 mostram). */
 @Composable
-private fun OnboardingWelcomeStep(
-    onNext: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        BrandNavyDark,
-                        BrandBlue,
-                        BrandNavyDark
-                    )
-                )
-            )
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Hero Identity from Figma 192:440
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = Color.White.copy(alpha = 0.08f),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
-                modifier = Modifier.padding(bottom = 16.dp)
-            ) {
-                RedeCidadaLogo(
-                    size = 92.dp,
-                    modifier = Modifier.padding(14.dp)
-                )
-            }
-
-            Text(
-                text = "Rede Cidadã",
-                style = MaterialTheme.typography.headlineLarge,
-                color = Color.White,
-                fontWeight = FontWeight.ExtraBold
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = "Segurança comunitária e mobilidade urbana em São Paulo",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.85f),
-                textAlign = TextAlign.Center
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 3 Pillars from Figma 192:440
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OnboardingPillarCard(
-                icon = CitizenIcons.Notifications,
-                iconTint = BrandOrange,
-                title = "Relatos da vizinhança",
-                description = "Veja e envie relatos com foto ou vídeo do que acontece perto de você."
-            )
-            OnboardingPillarCard(
-                icon = CitizenIcons.Groups,
-                iconTint = Color(0xFF38BDF8),
-                title = "SOS com guardiões",
-                description = "Em perigo, ligue 190 e avise pelo WhatsApp as pessoas de confiança que você cadastrar."
-            )
-            OnboardingPillarCard(
-                icon = CitizenIcons.PoliceShield,
-                iconTint = Color(0xFF34D399),
-                title = "Clima e transporte",
-                description = "Risco de chuva e vento, status dos trilhos e previsão dos ônibus em tempo real."
-            )
-        }
-
-        Spacer(modifier = Modifier.height(28.dp))
-
-        // Bottom CTA + Step indicator
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Button(
-                onClick = onNext,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BrandOrange,
-                    contentColor = Color.White
-                )
-            ) {
-                Text(
-                    text = "Começar",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = CitizenIcons.ArrowForward,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OnboardingDotsIndicator(activeStep = 0)
-        }
+private fun PreviewWhatsHappening() {
+    Column(verticalArrangement = Arrangement.spacedBy(RcSpacing.xs), modifier = Modifier.fillMaxWidth()) {
+        FeatureRow(CitizenIcons.FloodWater, RcTone.WARNING, "Risco de alagamento na sua região", "Avisos de chuva forte")
+        FeatureRow(CitizenIcons.CarIncident, RcTone.CRITICAL, "Acidente trava a Estrada de Itapecerica", "Relato de morador · há 5 min")
+        // Pedido do Erick (24/11/2026). Guia §2.1: mostrar relatos perto da pessoa, nunca "bairro perigoso".
+        FeatureRow(CitizenIcons.WarningTriangle, RcTone.CRITICAL, "Onde há mais relatos de assalto agora", "Relatos da comunidade em tempo real")
+        FeatureRow(CitizenIcons.Map, RcTone.INFO, "Mapa em tempo real", "Tudo isso perto de você")
     }
 }
 
 @Composable
-private fun OnboardingPillarCard(
-    icon: ImageVector,
-    iconTint: Color,
-    title: String,
-    description: String
-) {
+private fun FeatureRow(icon: androidx.compose.ui.graphics.vector.ImageVector, tone: RcTone, title: String, subtitle: String) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White.copy(alpha = 0.10f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.Top
-        ) {
+        Row(Modifier.padding(horizontal = RcSpacing.md, vertical = RcSpacing.sm), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(iconTint.copy(alpha = 0.20f)),
+                Modifier.size(40.dp).background(tone.container, CircleShape),
                 contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconTint,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.82f),
-                    lineHeight = 18.sp
-                )
+            ) { androidx.compose.material3.Icon(icon, contentDescription = null, tint = tone.color, modifier = Modifier.size(22.dp)) }
+            Spacer(Modifier.width(RcSpacing.sm))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             }
         }
     }
 }
 
+/** Passo 2: a chave de anônimo, como aparece ao relatar. */
 @Composable
-private fun OnboardingDotsIndicator(
-    activeStep: Int,
-    darkBackground: Boolean = true
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+private fun PreviewAnonymous() = Column(Modifier.fillMaxWidth()) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        repeat(3) { index ->
-            val isSelected = index == activeStep
-            val activeColor = if (darkBackground) BrandOrange else BrandBlue
-            val inactiveColor = if (darkBackground) {
-                Color.White.copy(alpha = 0.35f)
-            } else {
-                MaterialTheme.colorScheme.outlineVariant
+        Column(Modifier.padding(RcSpacing.md), verticalArrangement = Arrangement.spacedBy(RcSpacing.sm)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Publicar como anônimo", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Ligado por padrão", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(checked = true, onCheckedChange = null)
             }
+            Text("O que os outros veem", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(RcSpacing.xs)) {
+                RcSourceBadge(RcSource.Resident)
+                RcSourceBadge(RcSource.Confirmations(5))
+            }
+            Text("O que fica só com você", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Nome · e-mail · guardiões · alertas SOS", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
+    Spacer(Modifier.height(RcSpacing.sm))
+    TrustScorePreview()
+}
+
+/**
+ * Score de confiabilidade do relato (pedido do Erick, 24/11/2026).
+ * INTEGRAR: hoje não há análise automática (IA) nem cálculo — o score do usuário é fixo (940).
+ * Implementar antes de publicar na loja ou tirar a menção à análise automática.
+ */
+@Composable
+private fun TrustScorePreview() {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(Modifier.padding(RcSpacing.md), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier
-                    .height(8.dp)
-                    .width(if (isSelected) 24.dp else 8.dp)
-                    .clip(CircleShape)
-                    .background(if (isSelected) activeColor else inactiveColor)
-            )
+                Modifier.size(52.dp).background(RcTone.SAFE.container, CircleShape),
+                contentAlignment = Alignment.Center
+            ) { Text("92%", style = MaterialTheme.typography.titleSmall, color = RcTone.SAFE.color) }
+            Spacer(Modifier.width(RcSpacing.sm))
+            Column(Modifier.weight(1f)) {
+                Text("Confiabilidade do relato", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    "Avaliação de outros moradores + análise automática",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
 
-@Preview(showBackground = true, name = "Onboarding Welcome - Light")
+/** Passo 3: o botão de SOS de verdade (aqui só demonstra; não aciona nada). */
+@Composable
+private fun PreviewSos() {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+        RcSosHoldButton(onActivate = {}, size = 168.dp)
+        Spacer(Modifier.height(RcSpacing.sm))
+        Surface(shape = CircleShape, color = RcTheme.colors.safeContainer, contentColor = RcTheme.colors.safe) {
+            Text("Mariana e Carlos recebem sua localização", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+        }
+    }
+}
+
+@Preview(name = "Onboarding · claro", showSystemUi = true)
 @Composable
 fun PreviewCitizenOnboardingWelcome() {
-    CitizenSPTheme(darkTheme = false) {
-        CitizenOnboardingScreen(onFinishOnboarding = {})
-    }
+    CitizenSPTheme(darkTheme = false) { CitizenOnboardingScreen(onFinishOnboarding = {}) }
 }
 
-@Preview(
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    name = "Onboarding Location - Dark"
-)
+@Preview(name = "Onboarding · escuro", showSystemUi = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun PreviewCitizenOnboardingLocationDark() {
-    CitizenSPTheme(darkTheme = true) {
-        LocationPermissionGate(onGranted = {}, onBack = {})
-    }
+    CitizenSPTheme(darkTheme = true) { CitizenOnboardingScreen(onFinishOnboarding = {}) }
 }

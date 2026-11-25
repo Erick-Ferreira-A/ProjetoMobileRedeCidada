@@ -55,8 +55,9 @@ object BackendHttp {
         expectSuccess = false
         install(HttpTimeout) {
             requestTimeoutMillis = 60_000 // uploads de vídeo podem demorar
-            connectTimeoutMillis = 6_000
-            socketTimeoutMillis = 10_000
+            // 4G e Wi-Fi público podem demorar para abrir a conexão; 6 s derrubava o cadastro no celular.
+            connectTimeoutMillis = 15_000
+            socketTimeoutMillis = 30_000
         }
     }
 

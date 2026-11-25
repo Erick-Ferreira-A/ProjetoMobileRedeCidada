@@ -1,6 +1,7 @@
 package com.example.projetorevisao.server
 
 import com.example.projetorevisao.server.config.AppConfig
+import io.ktor.server.plugins.partialcontent.PartialContent
 import com.example.projetorevisao.server.database.DatabaseFactory
 import com.example.projetorevisao.server.models.ApiResponse
 import com.example.projetorevisao.server.repository.AuthRepository
@@ -78,6 +79,8 @@ fun Application.module(transitService: TransitService = TransitService()) {
     }
 
     install(CallLogging)
+    // Download em partes (Range): o player do celular precisa pular até o índice no fim dos vídeos.
+    install(PartialContent)
 
     install(Authentication) {
         jwt(JwtConfig.AUTH_NAME) {

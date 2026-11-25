@@ -58,6 +58,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import com.example.projetorevisao.ui.theme.RcTone
+import com.example.projetorevisao.ui.designsystem.RcSummaryHeadline
+import com.example.projetorevisao.ui.designsystem.RcSosHoldButton
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -163,10 +169,10 @@ fun CitizenSosScreen(
     // Mensagem pronta esperando a escolha do guardião (quando há mais de um).
     var pendingSosText by remember { mutableStateOf<String?>(null) }
     val emergencyChannels = listOf(
-        EmergencyChannel("190", "Polícia Militar", "Assalto em andamento, violência ou risco à vida", CitizenStatusColors.critical, CitizenIcons.PoliceShield),
-        EmergencyChannel("193", "Corpo de Bombeiros", "Incêndios, resgates, quedas de árvores e acidentes graves", BrandOrange, CitizenIcons.Fire),
-        EmergencyChannel("199", "Defesa Civil", "Enchentes, risco de desabamento e tempestades", BrandBlue, CitizenIcons.FloodWater),
-        EmergencyChannel("192", "SAMU", "Atendimento médico de urgência", CitizenStatusColors.safe, CitizenIcons.SosEmergency)
+        EmergencyChannel("190", "Polícia Militar", "Assalto em andamento, violência ou risco à vida", RcTone.CRITICAL.color, CitizenIcons.PoliceShield),
+        EmergencyChannel("193", "Bombeiros", "Incêndios, resgates, quedas de árvores e acidentes graves", RcTone.CRITICAL.color, CitizenIcons.Fire),
+        EmergencyChannel("192", "SAMU", "Atendimento médico de urgência", RcTone.CRITICAL.color, CitizenIcons.SosEmergency),
+        EmergencyChannel("199", "Defesa Civil", "Enchentes, risco de desabamento e tempestades", RcTone.WARNING.color, CitizenIcons.FloodWater)
     )
 
 
@@ -216,78 +222,79 @@ fun CitizenSosScreen(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Topo: pergunta, botão de segurar e o que vai acontecer (TELAS §2.7).
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(2.dp, CitizenStatusColors.critical.copy(alpha = 0.45f))
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "Em perigo agora?",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = CitizenStatusColors.critical,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Button(
-                        onClick = { context.dial("190") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = CitizenStatusColors.critical, contentColor = Color.White)
+                RcSummaryHeadline(
+                    text = "Precisa de ajuda?",
+                    modifier = Modifier.fillMaxWidth()
+                )
+                RcSosHoldButton(
+                    onActivate = ::onSosPressed,
+                    busy = isPreparingSos,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                val names = viewModel.guardians.map { it.name.substringBefore(" ") }
+                Text(
+                    text = when {
+                        isPreparingSos -> "Obtendo sua localização para montar a mensagem…"
+                        names.isEmpty() -> "Cadastre alguém de confiança para usar o aviso. Em perigo, use os números abaixo."
+                        names.size == 1 -> "Abre o WhatsApp com sua localização pronta para ${names[0]}. Você confirma o envio."
+                        names.size == 2 -> "Abre o WhatsApp com sua localização pronta para ${names[0]} e ${names[1]}. Você confirma o envio."
+                        else -> "Abre o WhatsApp com sua localização pronta para ${names.size} guardiões. Você confirma o envio."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                )
+                (localMessage ?: viewModel.sosStatusMessage)?.let { message ->
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(CitizenIcons.PhoneCall, contentDescription = null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Ligar 190 (Polícia)", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    }
-
-                    OutlinedButton(
-                        onClick = ::onSosPressed,
-                        enabled = !isPreparingSos,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(2.dp, CitizenStatusColors.critical)
-                    ) {
-                        if (isPreparingSos) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = CitizenStatusColors.critical)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Obtendo localização…", color = CitizenStatusColors.critical)
-                        } else {
-                            Icon(CitizenIcons.SosEmergency, contentDescription = null, tint = CitizenStatusColors.critical, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Avisar meus guardiões (WhatsApp)", color = CitizenStatusColors.critical, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    Text(
-                        text = "Abre o WhatsApp com a mensagem e sua localização prontas para cada guardião. " +
-                            "Você só precisa tocar em enviar. O app não chama a polícia sozinho: para isso, ligue 190.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-
-                    (localMessage ?: viewModel.sosStatusMessage)?.let { message ->
                         Text(
                             text = message,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.SemiBold,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                            modifier = Modifier.padding(14.dp).semantics { liveRegion = LiveRegionMode.Polite }
                         )
                     }
                 }
+            }
+        }
+
+        // Números de emergência logo abaixo, em grade 2×2: abrem o discador, não ligam sozinhos.
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Ligar agora",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.semantics { heading() }
+                )
+                emergencyChannels.chunked(2).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { channel ->
+                            EmergencyNumberTile(
+                                channel = channel,
+                                onCall = { context.dial(channel.number) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+                Text(
+                    text = "O app não liga nem chama a polícia sozinho.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
@@ -346,19 +353,6 @@ fun CitizenSosScreen(
             GuardianContactCard(guardian = guardian, onRemove = { viewModel.removeGuardian(guardian.id) })
         }
 
-        item {
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "Números de emergência",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.ExtraBold
-            )
-        }
-
-        items(emergencyChannels, key = { it.number }) { channel ->
-            EmergencyChannelCard(channel = channel, onCall = { context.dial(channel.number) })
-        }
     }
 
     pendingSosText?.let { text ->
@@ -486,54 +480,6 @@ private fun GuardianContactCard(guardian: GuardianContact, onRemove: () -> Unit)
     }
 }
 
-@Composable
-private fun EmergencyChannelCard(channel: EmergencyChannel, onCall: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClickLabel = "Ligar ${channel.number}", onClick = onCall),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(channel.color.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(channel.icon, contentDescription = null, tint = channel.color, modifier = Modifier.size(22.dp))
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "${channel.number} • ${channel.title}",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = channel.subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Surface(shape = CircleShape, color = channel.color) {
-                Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
-                    Icon(CitizenIcons.PhoneCall, contentDescription = null, tint = Color.White, modifier = Modifier.size(17.dp))
-                }
-            }
-        }
-    }
-}
 
 @Preview(showBackground = true, heightDp = 820, name = "SOS Screen - Light")
 @Composable
@@ -557,6 +503,26 @@ fun PreviewCitizenSosDark() {
             bottomBar = { CitizenBottomNavBar(currentScreen = "sos", onSelectScreen = {}, onOpenReportSheet = {}) }
         ) { innerPadding ->
             Surface(modifier = Modifier.padding(innerPadding)) { CitizenSosScreen() }
+        }
+    }
+}
+
+
+/** Número de emergência em bloco grande (TELAS §2.7). Toque abre o discador com o número. */
+@Composable
+private fun EmergencyNumberTile(channel: EmergencyChannel, onCall: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onCall,
+        modifier = modifier
+            .heightIn(min = 88.dp)
+            .semantics { contentDescription = "Ligar ${channel.number}, ${channel.title}" },
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline)
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(channel.number, style = MaterialTheme.typography.headlineMedium, color = channel.color)
+            Text(channel.title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }

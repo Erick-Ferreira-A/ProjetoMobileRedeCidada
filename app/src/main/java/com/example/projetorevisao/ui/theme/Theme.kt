@@ -7,78 +7,130 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-private val CitizenLightColorScheme = lightColorScheme(
+// Guia visual v1.0 §2.3 — neutros quentes. Sem azul no fundo, sem preto puro.
+
+private val RcLightColorScheme = lightColorScheme(
     primary = BrandBlue,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE6ECFF),
-    onPrimaryContainer = Color(0xFF14285F),
-    secondary = BrandOrange,
-    onSecondary = Color(0xFF271000),
-    secondaryContainer = Color(0xFFFFEAD8),
-    onSecondaryContainer = Color(0xFF713000),
-    tertiary = Color(0xFF006B52),
-    onTertiary = Color.White,
-    background = Color(0xFFF6F7FB),
-    onBackground = Color(0xFF182238),
-    surface = Color.White,
-    onSurface = Color(0xFF182238),
-    surfaceVariant = Color(0xFFEEF1F7),
-    onSurfaceVariant = Color(0xFF526078),
-    outline = Color(0xFF737F94),
-    outlineVariant = Color(0xFFDCE2EC),
-    error = Color(0xFFB42342),
+    primaryContainer = Color(0xFFDBE1FF),
+    onPrimaryContainer = Color(0xFF00164D),
+    inversePrimary = Color(0xFFB5C4FF),
+    secondary = BrandNavyDark,
+    onSecondary = Color.White,
+    secondaryContainer = PaperContainerHigh,
+    onSecondaryContainer = InkPrimary,
+    tertiary = BrandOrange,
+    onTertiary = BrandNavyDark,
+    tertiaryContainer = Color(0xFFFFDBCC),
+    onTertiaryContainer = Color(0xFF351000),
+    background = PaperBackground,
+    onBackground = InkPrimary,
+    surface = PaperSurface,
+    onSurface = InkPrimary,
+    surfaceVariant = PaperContainer,
+    onSurfaceVariant = InkSecondary,
+    surfaceTint = Color.Transparent,
+    inverseSurface = Color(0xFF32302D),
+    inverseOnSurface = Color(0xFFF6F4EF),
+    outline = PaperOutline,
+    outlineVariant = PaperLine,
+    error = LightExtendedColors.critical,
     onError = Color.White,
-    surfaceContainerLowest = Color.White,
-    surfaceContainerLow = Color(0xFFF8F9FC),
-    surfaceContainer = Color(0xFFF0F3F8),
-    surfaceContainerHigh = Color(0xFFE9EDF5),
-    surfaceContainerHighest = Color(0xFFE2E7F0)
+    errorContainer = LightExtendedColors.criticalContainer,
+    onErrorContainer = Color(0xFF410003),
+    scrim = Color.Black,
+    surfaceBright = PaperSurface,
+    surfaceDim = PaperContainerHigh,
+    surfaceContainerLowest = PaperSurface,
+    surfaceContainerLow = Color(0xFFFAF8F4),
+    surfaceContainer = PaperContainer,
+    surfaceContainerHigh = PaperContainerHigh,
+    surfaceContainerHighest = PaperContainerHighest
 )
 
-private val CitizenDarkColorScheme = darkColorScheme(
-    primary = Color(0xFFB7C8FF),
-    onPrimary = Color(0xFF14285F),
-    primaryContainer = BrandBlue,
-    onPrimaryContainer = Color.White,
-    secondary = Color(0xFFFFB77D),
-    onSecondary = Color(0xFF492000),
-    secondaryContainer = Color(0xFF713000),
-    onSecondaryContainer = Color(0xFFFFEAD8),
-    tertiary = AccentEmeraldSafe,
-    onTertiary = ObsidianBackground,
-    background = ObsidianBackground,
-    onBackground = TextExpressivePrimary,
-    surface = SurfaceDarkCard,
-    onSurface = TextExpressivePrimary,
-    surfaceVariant = SurfaceDarkElevated,
-    onSurfaceVariant = TextExpressiveSecondary,
-    outline = Color(0xFF8591AA),
-    outlineVariant = SurfaceBorderGlow,
-    error = Color(0xFFFFB2C0),
-    onError = Color(0xFF650023),
-    surfaceContainerLowest = ObsidianBackground,
-    surfaceContainerLow = SurfaceDarkHeader,
-    surfaceContainer = SurfaceDarkCard,
-    surfaceContainerHigh = SurfaceDarkElevated,
-    surfaceContainerHighest = Color(0xFF2B3957)
+private val RcDarkColorScheme = darkColorScheme(
+    primary = Color(0xFFAFC1FF),
+    onPrimary = BrandNavyDark,
+    primaryContainer = Color(0xFF244191),
+    onPrimaryContainer = Color(0xFFDBE1FF),
+    inversePrimary = BrandBlue,
+    secondary = Color(0xFFD2CCC2),
+    onSecondary = Color(0xFF2A2824),
+    secondaryContainer = NightContainerHigh,
+    onSecondaryContainer = NightInkPrimary,
+    tertiary = Color(0xFFFF7A1A),
+    onTertiary = BrandNavyDark,
+    tertiaryContainer = Color(0xFF7A3000),
+    onTertiaryContainer = Color(0xFFFFDBCC),
+    background = NightBackground,
+    onBackground = NightInkPrimary,
+    surface = NightSurface,
+    onSurface = NightInkPrimary,
+    surfaceVariant = NightContainer,
+    onSurfaceVariant = NightInkSecondary,
+    surfaceTint = Color.Transparent,
+    inverseSurface = Color(0xFFEDEAE4),
+    inverseOnSurface = Color(0xFF1D1C1A),
+    outline = NightOutline,
+    outlineVariant = NightLine,
+    error = DarkExtendedColors.critical,
+    onError = Color(0xFF690007),
+    errorContainer = DarkExtendedColors.criticalContainer,
+    onErrorContainer = Color(0xFFFFDAD6),
+    scrim = Color.Black,
+    surfaceBright = NightContainerHighest,
+    surfaceDim = NightBackground,
+    surfaceContainerLowest = Color(0xFF0E0D0C),
+    surfaceContainerLow = Color(0xFF171614),
+    surfaceContainer = NightContainer,
+    surfaceContainerHigh = NightContainerHigh,
+    surfaceContainerHighest = NightContainerHighest
 )
 
+/** Guia v1.0 §4: 8 chip/selo · 14 card/botão/campo · 24 topo de sheet. */
+val RcShapes = Shapes(
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp)
+)
+
+/** Grade de 4 dp (guia v1.0 §4). */
+object RcSpacing {
+    val xxs = 4.dp
+    val xs = 8.dp
+    val sm = 12.dp
+    val md = 16.dp
+    val lg = 24.dp
+    val xl = 32.dp
+    val minTouch = 48.dp
+}
+
+@Composable
+fun RcAppTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    CompositionLocalProvider(
+        LocalRcColors provides if (darkTheme) DarkExtendedColors else LightExtendedColors
+    ) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) RcDarkColorScheme else RcLightColorScheme,
+            typography = Typography,
+            shapes = RcShapes,
+            content = content
+        )
+    }
+}
+
+/** Nome antigo, mantido para as telas e previews existentes. */
 @Composable
 fun CitizenSPTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
-) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) CitizenDarkColorScheme else CitizenLightColorScheme,
-        typography = Typography,
-        shapes = Shapes(
-            small = RoundedCornerShape(8.dp),
-            medium = RoundedCornerShape(16.dp),
-            large = RoundedCornerShape(24.dp)
-        ),
-        content = content
-    )
-}
+) = RcAppTheme(darkTheme = darkTheme, content = content)

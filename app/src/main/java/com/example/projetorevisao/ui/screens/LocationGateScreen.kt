@@ -49,6 +49,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import com.example.projetorevisao.ui.designsystem.RcEmergencyCallChip
+import com.example.projetorevisao.ui.designsystem.RcPrimaryButton
+import com.example.projetorevisao.ui.designsystem.RcTextButton
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -107,15 +111,15 @@ fun LocationPermissionGate(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        if (onBack != null) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        // Topo: voltar (se houver) e emergência — longe do botão principal (TELAS §2.9).
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            if (onBack != null) {
                 IconButton(onClick = onBack) {
                     Icon(CitizenIcons.ArrowBack, contentDescription = "Voltar", tint = MaterialTheme.colorScheme.onBackground)
                 }
-                Text("Voltar", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-        } else {
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.weight(1f))
+            RcEmergencyCallChip()
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -123,22 +127,22 @@ fun LocationPermissionGate(
                 modifier = Modifier
                     .size(88.dp)
                     .clip(CircleShape)
-                    .background(BrandBlueHero.copy(alpha = 0.14f)),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(CitizenIcons.LocationPin, contentDescription = null, tint = BrandBlueHero, modifier = Modifier.size(44.dp))
+                Icon(CitizenIcons.LocationPin, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(44.dp))
             }
             Spacer(Modifier.height(20.dp))
             Text(
-                text = "Ative sua localização",
+                text = "Mostre o que acontece perto de você.",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.semantics { heading() }
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "A Rede Cidadã precisa da sua localização para funcionar.",
+                text = "Para isso, a Rede Cidadã usa sua localização enquanto o app está aberto.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -174,45 +178,22 @@ fun LocationPermissionGate(
 
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
             if (blockedForever) {
-                Button(
+                RcPrimaryButton(
+                    text = "Abrir configurações",
                     onClick = {
                         context.startActivity(
                             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
                         )
                     },
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
-                ) { Text("Abrir configurações", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
-                TextButton(onClick = ::requestOrContinue) { Text("Já liberei, continuar") }
+                    modifier = Modifier.fillMaxWidth()
+                )
+                RcTextButton("Já liberei, continuar", onClick = ::requestOrContinue)
             } else {
-                Button(
+                RcPrimaryButton(
+                    text = "Permitir localização",
                     onClick = ::requestOrContinue,
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandBlue, contentColor = Color.White)
-                ) {
-                    Icon(CitizenIcons.MyLocation, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Permitir localização", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            OutlinedButton(
-                onClick = {
-                    try {
-                        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:190")))
-                    } catch (_: ActivityNotFoundException) {
-                        message = "Este aparelho não faz ligações. Disque 190."
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, CitizenStatusColors.critical)
-            ) {
-                Icon(CitizenIcons.PhoneCall, contentDescription = null, tint = CitizenStatusColors.critical, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Emergência? Ligar 190", color = CitizenStatusColors.critical, fontWeight = FontWeight.Bold)
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
