@@ -8,6 +8,10 @@ description: Mapa do Rede Cidadã — app Android (Kotlin/Compose/MVVM) + servid
 ## Finalidade
 Mapa mínimo para trabalhar sem reinventar nem prometer o que o app não faz. Aponta para fontes; o código prevalece sobre este resumo.
 
+## Onde está tudo
+O repositório fica em `C:\Users\Erick Rondonia\Documents\REDE CIDADA\01_app\ProjetoMobileRedeCidada`. O resto do projeto (design, APKs, acadêmico, galeria, capturas, histórico) está na pasta-mãe, com índice em `00_LEIA-ME.md`.
+**Base de evolução contínua:** `C:\Users\Erick Rondonia\Documents\REDE CIDADA\08_conhecimento\`. Siga `ROTINA_DE_SESSAO.md` no início e no fim de toda sessão. Leia `PENDENCIAS.md` e `APRENDIZADOS.md` antes de agir.
+
 ## Fontes de verdade (ler nesta ordem)
 1. `AGENTS.md` e `CLAUDE.md`.
 2. `docs/CONTEXTO_ATUAL.md` (estado, matriz real/demo, pendências) e `docs/CAPACIDADES_CLAUDE.md`.

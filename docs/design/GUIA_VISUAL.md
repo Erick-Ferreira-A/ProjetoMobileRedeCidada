@@ -1,6 +1,6 @@
 # Rede Cidadã — guia visual (v1.0)
 
-Consolidação de 23/11/2026. Substitui os rascunhos v0.1/v0.2 (pasta `Documents\Guide Visual Rede Cidadã`).
+Consolidação de 23/11/2026. Substitui os rascunhos v0.1/v0.2 (pasta `Documents\REDE CIDADA\02_design\guia-visual`).
 Especificação das telas: [`TELAS.md`](TELAS.md). Código: `ui/theme/` e `ui/designsystem/`.
 
 ---

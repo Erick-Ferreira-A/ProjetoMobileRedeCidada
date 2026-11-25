@@ -15,7 +15,8 @@ description: Fechar uma entrega no Rede Cidadã — revisar diff, atualizar docs
 
 ## Galeria pública
 - URL: https://erick-ferreira-a.github.io/ProjetoMobileRedeCidada/ (branch `gh-pages`, `index.html` + `.nojekyll`). O QR impresso aponta para ela: **não mudar URL nem estrutura**.
-- Clone de publicação: `C:\Users\Erick Rondonia\Documents\Codex\2026-10-10\files-pasted-by-the-user-implementa\work\github-pages-gallery`; scripts em `...\work\banner`.
+- Clone de publicação: `C:\Users\Erick Rondonia\Documents\REDE CIDADA\05_publicacao\gh-pages`; scripts do banner em `C:\Users\Erick Rondonia\Documents\REDE CIDADA\04_academico\banner-codex\work-banner`.
+- Ao fechar uma entrega, siga também o "Fim" de `C:\Users\Erick Rondonia\Documents\REDE CIDADA\08_conhecimento\ROTINA_DE_SESSAO.md` (CHANGELOG, DECISOES, APRENDIZADOS, PENDENCIAS).
 - Publicar nova versão só com pedido explícito do usuário. Sem pedido: gerar localmente e informar o que mudaria.
 
 ## Railway / Play Store

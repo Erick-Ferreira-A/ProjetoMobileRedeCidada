@@ -5,7 +5,8 @@ Atualizado em 25/11/2026. O código prevalece sobre este resumo.
 ## Onde está o trabalho
 - Repositório: `Erick-Ferreira-A/ProjetoMobileRedeCidada`. Servidor e back-end são do **Fred** (Ktor + SQLite no Railway).
 - Redesign das telas: branch `agent/claude-design-system`, **PR #7** aberto para a `main`, aguardando revisão do Fred (PR #6 fechado, conteúdo incluído no #7).
-- APKs de teste (não vão para o git): `C:\Users\Erick Rondonia\Documents\RedeCidada-APK\` — último: `RedeCidada-teste-2026-11-25-v7.apk`, apontando para o servidor do Railway.
+- Pasta do projeto (desde 24/11/2026): `C:\Users\Erick Rondonia\Documents\REDE CIDADA\`. Repo em `01_app\ProjetoMobileRedeCidada` (abrir este caminho no Android Studio). Índice em `00_LEIA-ME.md`; decisões, changelog, aprendizados, pendências e rotina de sessão em `08_conhecimento\`.
+- APKs de teste (não vão para o git): `C:\Users\Erick Rondonia\Documents\REDE CIDADA\03_apks\` — último: `RedeCidada-teste-2026-11-25-v7.apk`, apontando para o servidor do Railway.
 - Gerar APK de teste: `.\gradlew.bat :app:assembleDebug -PBACKEND_URL=https://projetomobileredecidada-production.up.railway.app/api/v1` (com o workaround de loopback da skill `rede-cidada-validacao-mobile`).
 
 ## Documentos que mandam
@@ -50,5 +51,5 @@ Atualizado em 25/11/2026. O código prevalece sobre este resumo.
 4. Com o Fred: Postgres + R2 + push, depois comentários, menções, avaliação de notícia e score real.
 
 ## Testes e regras
-- `.\gradlew.bat assembleDebug test lint`: app 17 testes, servidor 33, lint 0 erros (25/11/2026).
+- `.\gradlew.bat assembleDebug test lint`: app 17 testes, servidor 33, lint 0 erros (25/11/2026). Repetido no caminho novo em 24/11/2026 22:54: tudo passou, lint 0 erros / 51 warnings / 2 hints (linha de base de warnings).
 - Nunca tocar em SOS/190 nem publicar relato real em teste; no emulador, conferir o foco do app antes de cada toque (skill de validação).
